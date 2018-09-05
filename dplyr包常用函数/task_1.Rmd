@@ -1,0 +1,292 @@
+---
+title: "dplyr包常用函数介绍"
+author: "靳晓松"
+date: "2018年5月19日"
+output: 
+  html_document:
+    number_sections: TRUE
+    toc: TRUE
+    toc_float: TRUE
+    code_folding: show
+    fig_width: 7
+    fig_height: 4.5
+    theme: united
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# dplyr包介绍
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;dplyr包是Hadley Wickham的新作，主要用于数据清洗和整理。相对于基础包的函数来说，该包在创建新变量、汇总计算、重命名变量和重新排列数据上大幅度提高了处理速度；并且提供了与其它数据库的接口，其语法也更加优雅，与管道函数结合使用可以轻松解决大部分数据整理问题。因此，对dplyr包的学习很有必要。
+
+要使用dplyr包，我们首先需要加载它：
+```{r message=FALSE, warning=FALSE}
+
+## 加载dplyr包，为了调用此包中的函数
+library(dplyr)
+
+```
+
+<span style="color:red">注：如果没有下载过这个包的话需要运行`install.packages("dplyr")`下载这个包，然后再进行加载操作。</span>
+
+</font>
+
+# 讲前准备
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;由于在介绍dplyr包的时候需要用到iris数据集和管道函数，因此我们提前介绍下这两项内容，方便大家理解。
+
+</font>
+
+## **iris** 
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;iris数据集的中文名是安德森鸢尾花卉数据集，其中包含150个样本，对应数据集的每行数据。每行数据包含每个样本的四个特征和样本的类别信息，所以iris数据集是一个150行5列的数据框(即一种二维格表的数据格式)。
+
+</font>
+
+### **数据查看**
+<font size=4 face="微软雅黑">
+
+```{r message=FALSE, warning=FALSE}
+
+dim(iris)   # 查看数据集的维度
+str(iris)   # 查看数据框的基本结构
+head(iris)  # 查看数据前6行
+
+```
+
+对于上面这条简单的`str()`命令就能知道关于数据集的大量信息：
+
+* 语句**data.frame**告诉我们数据集是数据框类型
+* 语句**150 obs. of  5 variables**告诉我们数据一共包含150个观测、5个变量
+* 左下角**Sepal.Length**、**Sepal.Width**等告诉我们每个变量的变量名和所对应的类型(num表示数值型、Factor表示因子型)
+* 数据类型后面展示了每个变量所对应的部分数值
+
+数据集的每列具体表示的信息如下：
+
+* Sepal.Length表示花萼长度
+* Sepal.Width表示花萼宽度
+* Petal.Length表示花瓣长度
+* Petal.Width表示花瓣宽度
+* Species表示花的种类，其中包括：setosa(山鸢尾)、versicolor(变色鸢尾)、virginica(维吉尼亚鸢尾)
+
+</font>
+
+### **图形展示**
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;接下来以iris数据集中的Sepal.Length(花萼长度)特征来探索数据特征分布，其它三个特征可以自行学习。
+
+首先需要加载plotly包，同样，如果没有下载过这个包的话需要使用`install.packages("plotly")`下载后再进行加载。
+
+```{r message=FALSE, warning=FALSE}
+
+## 加载plotly包，为了绘制互动图表
+library(plotly)
+
+```
+然后，以Species(种类)为横坐标，Sepal.Length(花萼长度)为纵坐标画交互式的箱线图。
+```{r message=FALSE, warning=FALSE}
+
+iris %>% 
+  plot_ly(x = ~Species,       # 以Species(种类)为横坐标 
+          y = ~Sepal.Length,  # 以Sepal.Length(花萼长度)为纵坐标
+          color = ~Species,   # 颜色按照Species(种类)分类
+          type = "box")       # 图的类型参数，box表示箱线图
+
+```
+
+</font>
+
+
+## **pip**
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;`%>%`是名不虚传的管道函数，其作用是将前一步的操作结果直接传给下一步操作的函数，从而省略了中间的赋值步骤，可以大量减少内存中的对象，节省内存。
+
+为了方便大家了解管道函数操作的优势，在此将管道函数操作与常规操作做以下操作对比：
+
+* 取10000个符合正态分布的随机数
+* 求这10000个数的绝对值，同时乘以50
+* 把结果组成一个100*100列的矩阵
+* 计算矩阵中每行的均值，并四舍五入保留到整数
+* 输出结果
+
+```{r message=FALSE, warning=FALSE}
+
+## 设置随机种子
+set.seed(1)
+
+## 以下是常规操作
+n1 <- rnorm(10000)            # 生成10000个符合正态分布的随机数
+n2 <- abs(n1)*50              # 求这10000个数的绝对值，同时乘以50
+n3 <- matrix(n2, ncol = 100)  # 把上一步结果组成一个100*100列的矩阵
+n4 <- round(rowMeans(n3))     # 计算矩阵中每行的均值，并四舍五入保留到整数
+n4                            # 输出结果
+
+ls()                          # 查看内存中的对象
+
+```
+<font size=4 face="微软雅黑">
+
+<span style="color:red">注：`set.seed()`用于设定随机数种子，在这里的目的是使以上随机数结果在每次运行时可重复出现。</span>
+
+</font>
+
+```{r message=FALSE, warning=FALSE}
+
+## 设置随机种子
+set.seed(1)
+
+## 以下是管道函数操作
+n4_pip <- 
+  rnorm(10000) %>%          # 生成10000个符合正态分布的随机数
+  abs() %>%                 # 求这10000个数的绝对值
+  '*'(50) %>%               # 将上一步的结果乘以50
+  matrix(ncol = 100) %>%    # 把上一步结果组成一个100*100列的矩阵
+  rowMeans() %>%            # 计算矩阵中每行的均值
+  round()                   # 将上一步结果四舍五入保留到整数
+
+n4_pip                      # 输出结果
+
+## 查看内存中的变量
+ls()
+
+```
+
+&emsp;&emsp;从两次查看内存中的对象可以看出后一次的查看增加了一个内存对象就是n4_pip。常规操作中的变量在内存中占了4个内存对象，而管道函数操作只占了一个。现在操作少，可能看不出什么，但是当内存变量比较多的时候就会影响R的运行速率。
+
+</font>
+
+# 常用函数介绍 {.tabset .tabset-fade .tabset-pills}
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;在dplyr包中比较常用的数据整理的函数有：`select()`、`filter()`、`group_by()`、`summarise()`、`mutate()`等。下面会对这几个函数结合管道函数进行讲解。
+
+</font>
+
+## **select()**
+<font size=4 face="微软雅黑">
+
+**`select()`函数的功能是用列的名称提取数据中所对应的列。用法比较简单。**
+
+以上面介绍过的iris数据集为例，提取它的Sepal.Length(花萼长度)和 Petal.Length(花瓣长度)列。由于数据量比较多，这里只展示前三行：
+
+```{r message=FALSE, warning=FALSE}
+
+iris %>%
+  select(Sepal.Length, Petal.Length) %>%  # 选取所需的列  
+  head(3)                                 # 展示前三行数据
+
+```
+
+</font>
+
+## **filter()**
+<font size=4 face="微软雅黑">
+
+**`filter()`函数提取满足逻辑标准的行。**
+
+下面以iris数据集为例，提取Sepal.Length(花萼长度)大于5且 Petal.Length(花瓣长度)小于2的样本，同样还是只展示前三行：
+
+```{r message=FALSE, warning=FALSE}
+
+iris %>%
+  filter(Sepal.Length > 5 & Petal.Length < 2) %>% # 选取满足条件的行
+  head(3)                                         # 展示前三行数据
+
+```
+
+</font>
+
+## **group_by()**
+<font size=4 face="微软雅黑">
+
+**`group_by()`函数会将数据集进行分组方便分组计算。**
+
+下面以iris数据集为例，对Species(种类)进行分组操作:
+
+<span style="color:red">注：分组操作结束后，要使用`ungroup()`函数取消分组。</span>
+
+```{r message=FALSE, warning=FALSE}
+
+iris %>%
+  group_by(Species) %>%  # 按照Species(种类)分组
+  count() %>%            # 计算样本个数
+  ungroup()              # 取消分组
+
+```
+
+&emsp;&emsp;可以看出经过分组再计算样本个数操作后，该数据集按照Species(种类)被分为三个组，然后计算每组相应个数。
+
+</font>
+
+## **summarise()**
+<font size=4 face="微软雅黑">
+
+**`summarise()`函数与`group_by()`函数结合使用可以实现分组统计的功能。**
+
+下面用`group_by()`函数与`summarise()`函数结合使用实现按Species(种类)计算个数的功能：
+
+```{r message=FALSE, warning=FALSE}
+
+iris %>%
+  group_by(Species) %>%   # 按照Species(种类)分组
+  summarise(n = n()) %>%  # 统计个数
+  ungroup()               # 取消分组
+
+```
+
+可以看出来这种操作与上一次`count()`操作结果一样，都实现了分组统计的功能。
+
+</font>
+
+## **mutate()**
+<font size=4 face="微软雅黑">
+
+**`mutate()`函数对列进行操作，返回时新增一列操作后的列。**
+
+下面我们生成一列数，是Sepal.Length(花萼长度)和Sepal.Width(花萼宽度)的加和，并命名为SPS，展示前三行：
+
+```{r message=FALSE, warning=FALSE}
+
+iris %>%
+  mutate(SPS = Sepal.Length + Sepal.Width) %>%  # 重塑一列新数据
+  head(3)                                       # 展示前三行
+
+```
+
+可以看出返回结果中多了一列，就是sps列。它是Sepal.Length(花萼长度)和Sepal.Width(花萼宽度)的加和。
+
+</font>
+
+# 小练习
+<font size=4 face="微软雅黑">
+
+最后以一个小练习来检验你的学习效果，我们的要求是：
+
+* 对iris数据集选出Petal.Length(花瓣长度)、Petal.Width(花瓣宽度)和Species(花的种类)列
+* 继上一步操作，筛选出Petal.Length(花瓣长度)大于5或者Petal.Width(花瓣宽度)小于1的数据
+* 然后，重塑一列新的数据，命名为SWS，为Petal.Length(花瓣长度)和Petal.Width(花瓣宽度)的加和
+* 最后，按照Species(种类)分组统计SWS的均值
+
+结果如下：
+
+```{r message=FALSE, warning=FALSE}
+
+iris %>%
+  select(Petal.Length, Petal.Width, Species) %>%  # 筛选出符合条件的列
+  filter(Petal.Length > 5 | Petal.Width <1) %>%   # 筛选出满足条件的行
+  mutate(SWS = Petal.Length + Petal.Width) %>%    # 重塑一列新的数据
+  group_by(Species) %>%                           # 按照Species(种类)分组
+  summarise(mean = mean(SWS)) %>%                 # 统计SWS的均值
+  ungroup()                                       # 取消分组
+  
+```
+
+</font>
