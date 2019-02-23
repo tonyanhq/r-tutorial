@@ -1,0 +1,280 @@
+---
+title: "降维与特征筛选"
+output: 
+  html_document: 
+    toc: TRUE
+    toc_float: TRUE
+    code_folding: show
+    fig_width: 7
+    fig_height: 4.5
+    theme: united
+    highlight: tango
+---
+
+#1 降维介绍
+***
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;在现实生活中，大多数数据集都有高维度的变量或特征，而算法在计算这些高冗余特征时，需要大量的时间。所以在保证不丢失大量信息的前提下，可以对数据进行无损归约，降维主要分为特征提取和特征筛选两类。特征提取是将高维数据投影到低维空间中，特征提取分为线性提取和非线性提取。线性提取尝试找到一个仿射空间来说明数据分布的变化，非线性提取对高维非线性曲线平面分布的数据非常有效。特征筛选是通过一些指标来挑选出合适的特征进行建模。
+
+
+</font>
+
+#2 线性特征提取方法
+***
+##2.1 PCA主成分分析
+
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;主成分分析将特征集缩减为能代表原始特征集的小部分主要特征分量，它通过正交变换将某些有关联的特征转换为主成分。
+
+&emsp;&emsp;PCA算法主要包括以下几部：
+
+&emsp;&emsp;1. 找到平均向量$\mu=\frac{1}{n}\sum^n_{i=1}{x_i}$;
+
+&emsp;&emsp;2. 计算协方差矩阵$C=\frac{1}{n}\sum^n_{i=1}{(x_i-\mu)}{(x_i-\mu)}^T$;
+
+&emsp;&emsp;3. 计算协方差矩阵C的特征向量以及特征值;
+
+&emsp;&emsp;4. 对特征值排序并选择前K个特征值;
+
+&emsp;&emsp;5. 构建一个D×K的矩阵U，D为原数据维度数，K为特征向量数，最后$y=U^Tx$将样本转换为新的数据。
+
+```{r message=FALSE, warning=FALSE}
+data(swiss)
+swiss <- swiss[,-1]# 去掉第一列
+swiss.pca <- prcomp(swiss,center = TRUE,scale=TRUE)# 主成分分析
+summary(swiss.pca)
+predict(swiss.pca,newdata=head(swiss,1))# 调用predict函数输出原始swiss数据的第一行数据在主成分上的数据值
+```
+&emsp;&emsp;可以看到前4个主成分就能解释所有特征的96.69%。而用主成分分析后，可以将swiss数据集的每一行都用主成分表示出来新的数据。
+
+</font>
+
+##2.2 MDS多维尺度分析
+
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;MDS多维尺度分析法是一种维数缩减方法，把高维的数据点映射到一个低维的流形上；同时也是一种可视化方法，利用2D或3D的MDS结果投影后的分布和聚集来研究数据的性质。
+
+```{r message=FALSE, warning=FALSE}
+library(ggplot2)
+data(swiss)
+swiss.dist <- dist(swiss)# 计算距离
+swiss.mds <- cmdscale(swiss.dist,k=2,eig=T)# 选择二维空间最大值进行计量MDS分析
+swiss.mds$eig# 查看所有特征值
+prop <- sum(abs(swiss.mds$eig[1:2]))/sum(abs(swiss.mds$eig))# 查看前两个特征值在所有特征值中的比例，检测能否用两个维度的距离来表示高维空间中距离，达到0.8较合适。
+prop
+x = swiss.mds$points[,1]
+y = swiss.mds$points[,2]
+ggplot(data.frame(x,y),aes(x,y))+geom_point(shape=16,size=3,colour='red')+geom_text(hjust=-0.1,vjust=0.5,alpha=0.5,aes(label =rownames(swiss)))
+```
+
+&emsp;&emsp;最终用2D可视化结果表示原始高维数据集。
+
+</font>
+
+##2.3 SVD奇异值分解法
+
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;SVD奇异值分解法通过奇异值分解，将一个矩阵分解为两个正交矩阵和一个对角矩阵，原始矩阵就等于这三个矩阵相乘。比如$m×n$的矩阵A的SVD是将A分解为三个矩阵的乘积$A=UDV^T$。其中，$U$为一个$m×m$的正交矩阵，$D$为一个$m×n$的对角矩阵，$V$为一个$n×m$的正交矩阵。
+
+&emsp;&emsp;接下来介绍一个用SVD进行图像压缩的例子。
+```{r message=FALSE, warning=FALSE}
+library(bmp)
+
+recoverimg <- function(img.svd, k)# 取前k个奇异值来恢复原图片
+{
+  u <- as.matrix(img.svd$u[,1:k])
+  v <- as.matrix(img.svd$v[,1:k])
+  d <- as.matrix(diag(img.svd$d)[1:k,1:k])
+  image(u%*%d%*%t(v))
+}
+
+lenna = read.bmp("lena512.bmp")
+lenna = t(lenna)[,nrow(lenna):1]
+image(lenna)
+
+lenna.svd <- svd(lenna)# SVD分解
+ks = c(3, 18, 100)
+for(i in ks)
+{
+    m = recoverimg(lenna.svd, i)
+    par(m)
+}
+```
+
+&emsp;&emsp;可以看出，当取3个成分时，图像完全不可分辨，但还是可以看出原始图片的整体色调。取 18个成分时，已经可以看出人物的轮廓。而继续增加k的取值，会让图片的细节更加清晰；当增加到 100时，已经几乎与原图看不出区别。
+
+</font>
+
+#3 非线性特征提取法
+***
+##3.1 ISOMAP
+
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;ISOMAP支持线性空间到非线性空间的转换，算法首先确定但每个点的近邻点，然后构建邻接图，计算两点间的最短路径，最后通过MDS分析找到数据间的低维嵌入。
+
+```{r message=FALSE, warning=FALSE}
+library(RnavGraphImageData)
+library(vegan)
+op <- par(mar=c(4,4,1,1)+0.2, mfrow=c(2,2))# 将几个图结合成同一背景下
+data(BCI)
+dis <- vegdist(BCI)# 调用vegdist计算对象之间的相异度
+tr <- spantree(dis)# 最小生成树
+pl <- ordiplot(cmdscale(dis), main="cmdscale")
+lines(tr, pl, col="red")
+ord <- isomap(dis, k=3)# 调用isomap进行降维
+ord
+pl <- plot(ord, main="isomap k=3")
+lines(tr, pl, col="red")
+pl <- plot(isomap(dis, k=5), main="isomap k=5")
+lines(tr, pl, col="red")
+pl <- plot(isomap(dis, epsilon=0.45), main="isomap epsilon=0.45")
+lines(tr, pl, col="red")
+par(op)
+dom <- apply(BCI, 1, which.max)#对BCI数据集的行取最大值
+op <- palette(c(palette("default"), "sienna"))
+plot(ord, pch = 16, col = dom, n.col = dom) 
+palette(op)
+```
+
+
+</font>
+
+##3.2 LLE局部线性嵌入法
+
+<font size=4 face="微软雅黑">
+&emsp;&emsp;和传统的PCA，LDA等关注样本方差的降维方法相比，LLE在降维时保持了样本的局部特征。LLE算法首先假设数据在较小的局部是线性的，也就是说，某一个数据可以由它邻域中的几个样本来线性表示。通过计算每个数据点的$k$个近邻，然后计算每个近邻的权值，使得每个点都能最优地由其近邻点组合重构，即残差和最小。最后第三步就是利用权重系数来在低维里重构样本数据。
+
+&emsp;&emsp;这里使用lle包中的lle_scurve_data中的数字数据作为输入数据源。
+```{r message=FALSE, warning=FALSE}
+library(lle)
+library(rgl)
+data(lle_scurve_data)
+X <- lle_scurve_data
+Y <- lle(X,m=2,k=12,id=TRUE)$Y# 处理数据集，保留维度设为2,邻近点设为12。
+plot(Y,main="embedded  data",xlab=expression(y[1]),ylab=expression(y[2]))# 嵌入数据的2D散点图
+plot_lle(Y,X,FALSE,col="red",inter=TRUE)#调用plot_lle函数展示降维结果
+```
+
+
+</font>
+
+#4 特征筛选
+***
+##4.1 FSelector特征筛选
+
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;FSelector算法包提供两种方法完成从原始特征集中挑选出具有代表性的特征。首先设定标准，然后挑选出满足这些标准的特征；再从特征子集空间中找到优化后的特征子集。
+
+&emsp;&emsp;FSelector算法包包含以下功能函数：
+
+&emsp;&emsp;* 特征分级算法:cfs,chi.squared,information.gain,gain.ratio,symmetrical.uncertainty,linear.correlation,rank.correlation,oneR,relief,consistency,random.forest.importance
+
+&emsp;&emsp;* 特征筛选算法:best.first.search,backward.search,forward.search,hill.climbing.search
+
+&emsp;&emsp;* 基于权重选择的特征筛选算法:cutoff.k,cutoff.k.percent,cutoff.biggest.diff
+
+&emsp;&emsp;* 创建公式:as.simple.formula
+
+&emsp;&emsp;接下来使用mlbench包中的HouseVotes84数据集完成特征筛选工作。
+```{r message=FALSE, warning=FALSE}
+library(FSelector)
+library(mlbench)
+data(HouseVotes84)
+weights <- random.forest.importance(Class~., HouseVotes84,importance.type=1)# 特征分级
+weights
+subset <- cutoff.k(weights, 5)# 特征筛选出权重最高的五个特征
+f <- as.simple.formula(subset,"Class")# 创建公式，第一个参数为特征集，第二个参数为目标特征的命名
+f
+```
+&emsp;&emsp;weights这一结果显示了这16个特征的重要性，选取从大到小前5个特征，结果分别是V4,V3,V11,V5,V14。因此将这5个特征作为最后的筛选结果。
+
+</font>
+
+##4.2 scree测试确定主成分数
+
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;主成分用来表示原始特征的大部分方差。碎石测试的主要目的是将主成分分析结果用碎石图方式表示，而碎石图的纵坐标就是每个主成分的方差。通过找到图中曲线斜率变化最快的因素来确认主成分数。
+
+&emsp;&emsp;使用swiss数据集完成特征筛选工作。
+```{r message=FALSE, warning=FALSE}
+data(swiss)
+head(swiss)
+swiss.pca <- prcomp(swiss, center=TRUE,scale=TRUE)# 主成分分析Swiss数据
+screeplot(swiss.pca, type='line')# 使用screeplot绘制折线图
+```
+&emsp;&emsp;从图上看出，当主成分为2时，斜率变化最快。当主成分从1到2时，曲线斜率最大。
+
+</font>
+
+##4.3 Kaiser方法确定主成分数
+
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;Kaiser法是另一种确定主成分数的方法，该方法挑选特征值大于1的因素作为主成分。
+
+```{r message=FALSE, warning=FALSE}
+data(swiss)
+swiss.pca <- prcomp(swiss, center=TRUE,scale=TRUE)# 主成分分析Swiss数据
+S <- swiss.pca$sdev
+S2 <- swiss.pca$sdev^2
+which(S2>1)
+screeplot(swiss.pca, type='line')# 使用screeplot绘制折线图
+abline(h=1,col='red',lty=3)# 参考线，lty参数是虚线
+```
+
+&emsp;&emsp;因为计算出的主成分对象包含了每个成分的标准差，我们算出方差值后，选出大于1的成分分别是1和2，而且从碎石图可以看出红线以上需要保留的成分也是1和2。
+
+</font>
+
+# 5 本章汇总
+***
+<font size=4 face="微软雅黑">
+
+| 名称                         | 类别   | 功能                |
+| -------------------------- | ---- | ----------------- |
+| prcomp()                   | 函数   | 主成分分析             |
+| predict()                  | 函数   | 预测函数              |
+| ggplot2                    | 包    | 可视化包              |
+| cmdscale()                 | 函数   | MDS多维尺度分析         |
+| dist()                     | 函数   | 求距离函数             |
+| bmp                        | 包    | bmp格式图像包          |
+| as.matrix()                | 函数   | 矩阵格式转换            |
+| diag()                     | 函数   | 取矩阵对角线            |
+| image()                    | 函数   | 图像格式输出            |
+| read.bmp()                 | 函数   | bmp格式图像读取         |
+| svd()                      | 函数   | SVD分解             |
+| RnavGraphImageData         | 包    | 数据包               |
+| vegan                      | 包    | 基本排序方法包           |
+| vegdist                    | 包    | 计算对象之间的相异度        |
+| BCI                        | 包    | 数据包               |
+| spantree()                 | 函数   | 最小生成树             |
+| isomap()                   | 函数   | ISOMAP降维          |
+| apply()                    | 函数   | 计算矩阵中行或列的均值、和值的函数 |
+| lle                        | 包    | lle降维包            |
+| lle()                      | 包    | lle降维函数           |
+| plot_lle()                 | 函数   | 展示降维结果            |
+| FSelector                  | 包    | 特征抽取              |
+| mlbench                    | 包    | 数据包               |
+| random.forest.importance() | 函数   | 确定特征重要性           |
+| cutoff.k()                 | 函数   | 选择前k个数据           |
+| as.simple.formula()        | 函数   | 创建公式              |
+| screeplot()                | 函数   | 绘制碎石折线图           |
+
+#6 参考文献
+***
+[1] 丘祐玮.机器学习与R语言实战[M].机械工业出版社,2016. 
+
+</font>
+
+
+
+
+
+

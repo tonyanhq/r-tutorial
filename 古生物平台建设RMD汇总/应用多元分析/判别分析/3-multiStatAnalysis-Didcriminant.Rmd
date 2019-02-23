@@ -1,0 +1,234 @@
+---
+title: "应用多元统计--判别分析"
+output: 
+  html_document:
+    number_sections: TRUE
+    toc: TRUE
+    toc_float: TRUE
+    code_folding: show
+    fig_width: 7
+    fig_height: 5
+    theme: united
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+<font size=4 face="微软雅黑">
+
+#总述
+
+***
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;判别分析是用于判断样品所属类别的一种统计分析方法。在生产、科研和日常生活中经常遇到如何根据观测到的数据资料对所研究的对象进行判别归类的问题。
+
+&emsp;&emsp;举一个简单而直观的例子，在医学诊断中，一个病人肺部有阴影，医生要判断他患的是肺结核、肺部良性肿瘤还是肺癌？在这里由肺结核病人、良性肿瘤病人、肺癌病人组成三个总体，病人来源于这三个总体之一。判别分析的目的就是通过测得病人的指标（阴影的大小、边缘是否光滑、体温多少……）来判断他应该属于哪个总体（即判断他患的是什么病）。
+
+&emsp;&emsp;总之，判别分析是一种应用性很强的多元统计方法，已渗透到各个领域。但不管是哪个领域，判别分析问题都可以这样描述：设有k个m维总体$G_1,G_2,...G_k$，其分布特征已知（如已知分布函数分别为$F_1(x),F_2(x),...F_K(x)$，或知道来自各个总体的训练样本），对给定的一个新样品X，我们要判断它来自哪个总体。
+
+&emsp;&emsp;进行判别归类时，由假设前提、判别依据及处理手法的不同可得到不同的判别方法。如：距离判别、贝叶斯(Bayes)判别、费希尔(Fisher)判别、逐步判别、序贯判别等。本章介绍几个主要的判别方法。
+
+#距离判别
+
+***
+
+##基本思想
+<font size=4 face="微软雅黑">
+
+
+&emsp;&emsp;样品和哪个已知总体距离最近，就判它属哪个总体，距离判别法也称直观判别法。
+<font size=4 face="微软雅黑">
+
+##距离的定义
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;马氏（Mahalanobis）距离：设总体$G$为$k$维总体，均值向量为$μ$，协差阵为Σ，则样品X与总体G的马氏距离定义为:$$d^2 (x,G)=(X-μ）’Σ^{-1}(X-μ)$$ 
+当$k=1$时，$$d^2 (x,G)=(x-μ)^2/σ^2 $$
+<font size=4 face="微软雅黑">
+
+##两总体距离判别
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;已知有两个总体G_1和G_2，样品X∈R^k,样品到这两个总体的距离分别为$d^2 (x,G_1 )$和$d^2 (x,G_2 )$，则判别规则:
+$$X∈G_1,如d^2 (X,G_1)≤d^2 Σ(X,G_2)$$
+$$x∈G_2,如d^2 (X,G_1)>d^2 (X,G_2)$$
+&emsp;&emsp;当总体的数学期望和协方差阵未知时，可以用样本的数学期望和协方差阵近似代替总体的数学期望和协方差阵。
+
+<font size=4 face="微软雅黑">
+
+##多总体距离判别
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;设有t个k维总体：(G_1,G_2,...G_t)。它们的均值、协差阵分别为μ_i,Σ_i,X到t个总体的距离$d_i^2(X)$，则判别准则为：$$X∈G_l,如d^2 (X,G_l)≤d^2 (X,G_i)$$ 
+<font size=4 face="微软雅黑">
+
+##R语言实现
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;在R中，我们用`mahalanobis()`函数来计算马氏距离，`colMeans()`函数计算数据框类型数据的均值。用`wmd()`函数进行判别，该函数在`wMDB`软件包中，基本调用方法为
+```
+wmd(TrnX, TrnG)
+```
+* `TrnX`是数据对象
+* `TrnG`是类别向量
+
+```{r message=FALSE, warning=FALSE}
+data1<-read.csv("E:/BJintern/dcri-train.csv") # 读取数据
+traindata<-data1[1:4] # 取数据集中的前4列作为训练样本
+head(traindata,3) # 显示训练样本的前3行
+colM<-colMeans(traindata) # 计算均值
+cov_train<-cov(traindata) # 计算协方差阵
+distance<-mahalanobis(traindata,colM,cov_train) # 计算马氏距离
+head(distance,5) # 显示前5个距离
+#install.packages("wMDB")
+library(WMDB) # 加载WMDB包
+head(data1,3) # 取data1数据集前3行
+traindata_group<-data1$A # 将data1数据集中A列生成样品的已知类别
+traindata_group<-as.factor(traindata_group) # 转换为因子变量
+wmd(traindata,traindata_group) # 运用wmd函数进行判别
+
+```
+
+&emsp;&emsp;从结果可以看出，根据训练样本建立的判别准则再次运用到训练样本中，出现了0个判错样品，拥有100%的准确度，由于本例中样本量较少，所以准确度较高。
+<font size=4 face="微软雅黑">
+
+#贝叶斯(Bayes)判别法
+
+***
+
+##基本思想
+
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;距离判别只要求知道总体的特征量（即参数），不涉及总体的分布类型。距离判别方法简单，结论明确，是很实用的方法。但该方法也有缺点：一是该判别法与各总体出现的机会大小（先验概率）完全无关；二是判别方法没有考虑错判造成的损失，这是不合理的。贝叶斯判别法正是为解决这两方面问题而提出的判别方法。
+
+&emsp;&emsp;假定对研究对象已有一定的认识，常用先验概率来描述这种认识，我们抽取样本后，用样本来修正已有的先验概率分布，得到后验概率分布，然后通过后验概率来进行判别分析的方法就叫做贝叶斯判别法。
+<font size=4 face="微软雅黑">
+
+###错判概率
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;当观测X属于第i个总体，但用某种判别法判别时，把X错判给了第j个总体，这时用$P(j|i)=∫_{D_j}f_i (x)dx$表示该判别法的错判概率。其中，$f_i (x)$表示第i个总体的密度函数。
+<font size=4 face="微软雅黑">
+
+###错判损失
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;当观测X属于第i个总体，但用某种判别法判别时，把X错判给了第j个总体，这时用$L(j|i)$表示用该判别法把实属第i个总体的样品错判为第j个总体所造成的损失。
+&emsp;&emsp;平均损失定义为$$g(D)=\sum\limits_{s=1}^{t}q_s  \sum\limits_{j=1}^{t}P(j|s)L(j|s)$$&emsp;&emsp;公式$\sum\limits_{j=1}^{t}P(j|s)L(j|s)$表示本属于总体s的观测被错判的平均损失，其中$j=1,2,...t$。$q_s$代表第s个总体被选到的概率。
+<font size=4 face="微软雅黑">
+
+##判别准则
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;找到某种判别法D，使得D带来的平均损失g(D)达到最小。
+<font size=4 face="微软雅黑">
+
+###后验概率
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;后验概率的判别公式为$$P(G_s|x)=\frac{P(G_s)P(x|G_s)}{\sum\limits_{i=1}^tP(G_s)P(x|G_s)}$$&emsp;&emsp;判别准则为$$如果P（G_l|x）>P(G_i|x),则 x\in G_l$$$$否则，待判$$其中，$P(G_s)$表示第s个总体被选到的概率，$P(x|G_s)$表示观测x来自于总体s，并求出其概率。
+<font size=4 face="微软雅黑">
+
+##R语言实现
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;我们在这里给大家介绍的是后验概率判别的R语言实现。在R中，我们使用`klaR`包中的`NaiveBayes()`函数实现。该函数的调用方法为
+
+```
+NaiveBayes(formula, data, ...)
+
+```
+<font size=4 face="微软雅黑">
+
+```{r message=FALSE, warning=FALSE}
+#install.packages("klaR")安装klaR软件包
+library(klaR) # 加载klaR包
+data("iris") # 读取R自带数据包iris
+set.seed(1)#设置随机种子，以保证每次抽样数据一致
+index<-sample(2,nrow(iris),replace = T,prob=c(0.7,0.3))
+#通过抽样建立训练集（70%）和测试集（30%）
+train<-iris[index==1,]#在抽样步骤中，标签为1的划为训练集
+test<-iris[index==2,]#在抽样步骤中，标签为2的划为测试集
+Bayes_Model<-NaiveBayes(Species~.,data=train) # 构建贝叶斯模型
+summary(Bayes_Model)#汇总模型信息
+Bayes_Model_pre<-predict(Bayes_Model,newdata = test[,1:4]) # 进行预测
+table(test$Species,Bayes_Model_pre$class) # 生成实际与预判混淆矩阵
+mean(test$Species==Bayes_Model_pre$class) # 计算正确率
+```
+
+&emsp;&emsp;从混淆矩阵可以看出来，判错了1个，正确率为97.7%，可以看出贝叶斯判别的结果是很好的。
+
+#费希尔(Fisher)判别
+
+***
+
+##基本思想
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;费希尔判别的基本思想是投影，将k组m元数据投影到某一个方向，使得投影后组与组之间尽可能地分开。而衡量组与组之间是否分开的方法借助于意愿方差分析的思想。利用方差分析的思想来导出判别函数，这个函数可以是线性的，也可以是很一般的函数。
+<font size=4 face="微软雅黑">
+
+##判别函数
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;设从总体$G_t$(t=1,2,3,...n)分别抽取m维样本如下：$$X_{(i)}^{(t)}=(X_{(i1)}^{(t)},X_{(i2)}^{(t)},...X_{(im)}^{(t)})',(k=1,2,...k,i=1,2,...n_t)$$
+组间偏差平方和为$$B_0=\sum\limits_{α=1}^{k}n_α(a'\bar{X}^{(α)}-a'\bar{X})^2=a'Ba$$其中，$\bar{X}^{α}$为α组的样本均值，$\bar{X}$为样本均值，B为组间离差阵，即$B=\sum\limits_{α=1}^{k}n_α(\bar{X}^α-\bar{X})(\bar{X}^α-\bar{X})'$合并的组内平方和为$$E_0=\sum\limits_{α=1}^{k}\sum\limits_{j=1}^{n_α}(a'X_j^{α}-a'\bar{X}^α)^2=a'Ea$$其中合并的组内离差阵E为$$E=\sum\limits_{α=1}^{k}\sum\limits_{j=1}^{n_α}(X_j^{α}-\bar{X}^α)(X_j^{α}-\bar{X}^α)'$$
+
+&emsp;&emsp;若K类的均值有显著差异，则比值$g(a)=\frac{a'Ba}{a'Ea}$应该足够大。但是使得g(a)达到极大值的解a不唯一。因此应对a加以约束条件，在这里选a使$a'Ea=1$。已知a是在$a'Ea=1$条件下使得g(a)达极大的方向，称$u(a)=a'X$为第一典型变量。利用乘子法求条件极值，在此不再赘述。
+
+<font size=4 face="微软雅黑">
+
+##判别准则
+<font size=4 ace="微软雅黑">
+
+&emsp;&emsp;若$E^{-1}B$有s个非零特征值，可以取相应的典型变量，然后可以考虑用前面的判别方法，例如距离判别、贝叶斯判别。
+<font size=4 ace="微软雅黑">
+
+##R语言实现
+<font size=4 ace="微软雅黑">
+
+&emsp;&emsp;在R语言中，我们使用`MASS`包中的`lda()`函数进行费希尔判别。
+<font size=4 ace="微软雅黑">
+
+```{r message=FALSE, warning=FALSE}
+#install.packages("MASS")#安装MASS软件包
+library(MASS) # 加载MASS包
+data("iris") # 读取R自带数据集iris
+set.seed(1)
+index<-sample(2,nrow(iris),replace = T,prob=c(0.7,0.3))
+# 通过抽样建立训练集（70%）和测试集（30%）
+train<-iris[index==1,]
+test<-iris[index==2,]
+Fisher_Model<-lda(Species~.,data=train) # 构建费希尔判别模型
+Fisher_Model_pre<-predict(Fisher_Model,newdata=test[,1:4]) # 进行预测
+table(test$Species,Fisher_Model_pre$class) # 生成实际与预判混淆矩阵
+mean(Fisher_Model_pre$class==test$Species) # 计算正确率
+
+```
+
+&emsp;&emsp;从混淆矩阵可以看出来，判错了0个，正确率为100%，可以看出费希尔判别在这个数据集上表现非常好。
+
+
+
+<font size=4 face="微软雅黑">
+#参考文献
+<font size=4 face="微软雅黑">
+
+***
+[1]薛毅. 统计建模与R软件[M]. 清华大学出版社, 2007.
+<font size=4 face="微软雅黑">
+
+[2]https://blog.csdn.net/lswbjtu/article/details/73341862
+<font size=4 face="微软雅黑">
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,81 @@
+---
+title: "数据结构-获取数据"
+output: 
+  html_document:
+    number_sections: TRUE
+    toc: TRUE
+    toc_float: TRUE
+    code_folding: show
+    fig_width: 7
+    fig_height: 4.5
+    theme: united
+    highlight: tango
+---
+
+
+<font size=4 face="微软雅黑">
+
+# 导入Excel数据
+***
+1.导入xlsx格式数据
+
+说明：若要读取Excel数据，需借助readxl包导入数据，导入Excel数据到数据框中的函数是read_excel，基本书写格式为：
+
+read_ excel（file=”文件名”）
+
+例如，将Excel格式的cardata数据导入到数据框中：
+
+```{r,}
+library(readxl)                   ##加载readxl包
+data=read_excel("F:/cardata.xlsx")     ##导入Excel数据
+str(data)                        ##浏览对象data的存储类型和结构信息
+```
+
+2.导入csv格式数据
+
+<font size=4 face="微软雅黑">
+说明：若要读取csv数据时，导入csv数据框中的函数是read.csv，基本书写格式为：
+
+read.csv（file=”文件名.csv”）
+
+为何对于csv标注了两种方法呢，详见如下：
+
+（1）导入数据变量为字符型
+
+```{r,}
+data=read.csv("F:/cardata.csv")     ##导入csv数据
+str(data)                        ##浏览对象data的存储类型和结构信息
+```
+
+（2）变量改为因子型
+```{r,}
+data=read.csv("F:/cardata.csv", stringsAsFactors=F)      ##导入csv数据
+str(data)                              ##浏览对象data的存储类型和结构信息
+```
+ 
+&emsp;&emsp;可以看到如果不加stringsAsFactors=F，则全部变量为因子型，加了stringsAsFactors=F则全部变量为字符串，由于cardata数据大多为数值型数据，因此加了stringsAsFactors=F把字符串转为数值型是比较合适的，因此建议大家如果遇到了数据变量大多为数值型数据可以直接加入stringsAsFactors=F将字符串变为数值型。
+
+#  导入文本文件数据
+***
+<font size=4 face="微软雅黑">
+
+说明：若要读取文本文件数据时，导入数据框中的函数是read.table，基本书写格式为：
+
+read.table（”文件名.txt”,sep=”\t”）    解释：sep="\t" 表示以tab（制表符）为分隔符
+```{r,}
+data=read.table("F:/cardata.txt",sep="\t")
+str(data)
+```
+
+# 导入剪贴板数据
+***
+<font size=4 face="微软雅黑">
+说明：若要读取剪贴板数据时，首先需要对数据进行剪贴或复制再用下面的函数进行读取。导入数据框中的函数是read.table，基本书写格式为：
+
+read.table("clipboard",header=T,sep="\t")
+
+将剪贴板数据导入R如下：
+```{r,}
+data=read.table("clipboard",header=T,sep="\t")
+str(data)
+```

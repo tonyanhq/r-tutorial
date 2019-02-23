@@ -1,0 +1,398 @@
+---
+title: "朴素贝叶斯"
+output: 
+  html_document:
+    number_sections: TRUE
+    toc: TRUE
+    toc_float: TRUE
+    code_folding: show
+    fig_width: 8
+    fig_height: 5
+    theme: united
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+# 朴素叶斯简介及基本思想
+
+<font size=4 face="微软雅黑">
+
+***
+&emsp;&emsp;贝叶斯定理是由英国数学家贝叶斯(Thomas Bayes 1702-1761)创建的，被用来描述两个条件概率之间的关系，也是当前机器学习领域中的一个常见的**有监督**分类算法。在本小节中我们着重介绍朴素贝叶斯分类器(Naive Bayes Classifiers)的内容。
+
+&emsp;&emsp;贝叶斯的基本思想就在于**通过考虑特征概率来预测分类**,朴素贝叶斯分类器是一个基于贝叶斯定理的比较简单的概率分类器，其中朴素(naive)二字是指的对于模型中各个特征有强独立性的假设，并未将特征间的相关性纳入考虑中。
+
+&emsp;&emsp;在实际进行分类的过程中首先利用训练数据并根据特征的取值来计算每个类别被观察的概率。当分类器用于无标签数据时，分类器就会根据观测到的概率来预测新的特征最有可能属于哪个类。
+
+&emsp;&emsp;需要**特别注意**的是，朴素贝叶斯算法是在以下述两个假设为前提的情况下建立的：
+
+* **假设所有特征都具有相同的重要性和独立性(条件特征独立)**
+* **假设连续变量符合正态分布**
+
+&emsp;&emsp;这为后续的计算提供了很大的便利，但是这样的假设在大部分情况下不符合现实场景，因此会在一定程度上影响算法的精度，同时也带来了一些不适用性。
+
+# 朴素贝叶斯原理及解释
+
+***
+&emsp;&emsp;朴素贝叶斯算法是基于概率的分类算法，其中涉及两个变量，分别是：
+
+* **自变量($X$)：**表示发生事件或样本的特征
+* **因变量($Y$)：**表示事件或样本所对应的类别
+
+&emsp;&emsp;朴素贝叶斯的思想在于**根据某个事件的先验概率来计算因变量属于某个类别的后验概率**。朴素贝叶斯定理的公式展示如下：
+$$P(Y|X)=\frac{P(YX)}{P(X)}=\frac{P(X|Y)P(Y)}{P(X)}$$
+&emsp;&emsp;从公式1中可以看出，如果要想得到事件$X$发生的情况下$Y$所属某个类别的概率，只需要计算以下几点：
+
+* **$P(X)$：**$X$事件的概率，即$X$的先验概率；
+* **$P(Y)$：**$Y$属于某类的概率，即$Y$的先验概率；
+* **$P(X|Y)$：**以及已知$Y$的某个分类下，事件$X$的概率，即后验概率。
+
+&emsp;&emsp;观察上述需求可知，不同水平的$P(C)$比较容易获得，只需计算数据中各个类别所对应的概率即可；所以贝叶斯中的难点就在于后验概率的计算，因此在这里我们便可以运用到上述的假设一，即**假设所有特征都具有相同的重要性和独立性(条件特征独立)**，在这种前提下，通过概率论的知识我们便可以用如下的公式很容易地计算出$P(X|C)$：
+$$P(X|C_i)=P(x_1|C_i)*P(x_2|C_i)*...*P(x_n|C_i)$$
+
+&emsp;&emsp;在自变量为离散性变量的情况下，我们可以直接通过计算频率来得出先验概率，并通过公式1.2计算出后验概率。
+
+&emsp;&emsp;但是对于连续性变量来说情况要稍微复杂一些，这时我们需要运用到假设二的内容，即**假设连续变量符合正态分布**。正态分布的概率密度函数如下所示：
+$$f(x)=\frac{1}{\sqrt{2\pi}\sigma}e^-\frac{(x-\mu)^2}{2\sigma^2}$$
+
+&emsp;&emsp;其中$\mu$代表数学期望(均值)，$\sigma$代表标准差。
+
+&emsp;&emsp;从该函数中可以看出只要变量的均值和标准差就能得出其对应的概率值。总之，朴素贝叶斯分类的过程就是通过上述过程计算出某事物归属于不同类的概率，再从中挑选出最大的概率，并将其归为相关类别。
+
+# 案例
+
+***
+&emsp;&emsp;本部分主要介绍了朴素贝叶斯分类在R语言中的实现过程。本次实验采用了经典的Mushrooms数据集，目的通过数据集中给出的蘑菇的物理特性，结合朴素贝叶斯分类算法，来判断蘑菇属于有毒的还是可食用的类别。
+
+&emsp;&emsp;案例主要涉及以下六个小部分：
+
+* 数据集介绍
+* 导入数据
+* 数据探索与预处理
+* 特征工程
+* 朴素贝叶斯建模
+* 模型评估
+
+## 数据集介绍
+
+&emsp;&emsp;数据集名称为Mushroom Data Set，数据集中包含从奥杜邦的野外指南中得到的描述蘑菇的物理特性。本数据集记录了有关伞菌属和环柄菇属蘑菇的对应假想样本的23种描述，每一个物种都被认为是可以食用的，绝对有毒的，或者是未知的可食性，不推荐食用。而且该指南明确指出，没有简单的规则来确定蘑菇的可食性。
+
+&emsp;&emsp;数据有23列，8124行，由于变量数量太多，选择部分特征变量进行解释，展示如下：
+
+
+|          变量名        |           变量解释               |
+|:----------------------:|:--------------------------------:|
+|    class               |蘑菇类别：edible=e,  poisonous=p  |
+| cap.shape              |菌盖形状：bell=b, conical=c…      |
+| cap.surface            |菌盖表面： fibrous=f, grooves=g…  |
+|cap-color               |菌盖颜色： brown=n, buff=b…       |
+|odor                    |气味：almond=a, anise=l…          |
+|......                  |......                            |
+|stalk.shape             |茎的形状：enlarging=e, tapering=t |
+|stalk.surface.above.ring|菌环上方茎表面：fibrous=f scaly=y…|
+|ring.number             |菌环数量：none=n, one=o, two=t    |
+
+
+## 导入数据
+
+&emsp;&emsp;本次实验使用kaggle的mushrooms数据集，通过**read.csv()**函数获取数据集：
+
+```{r}
+
+setwd("E:/") # 设置工作路径为E盘
+
+# 使用read.csv()函数导入mushroom数据集，并命名为mydata
+mydata <- read.csv('mushrooms.csv')
+
+```
+
+
+## 数据探索与预处理
+
+&emsp;&emsp;在本步骤中进行数据的展示和简单的数据探索，并根据具体情况进行数据预处理。
+
+<font size=2 face="微软雅黑">
+
+<span style="color:red">注意：如果没有下载plyr和dplyr程序包，请先使用`install.packages("plyr")`命令和`install.packages("dplyr")`下载程序包之后再加载。</span>
+
+</font>
+
+```{r}
+
+# install.packages("plyr")  # 下载plyr程序包
+# install.packages("dplyr") # 下载dplyr程序包
+
+library(plyr)               # 加载plyr程序包
+library(dplyr)              # 加载dplyr程序包，使用glimpse()函数
+
+glimpse(mydata)             # 查看数据的基本结构
+summary(mydata) # 查看变量的主要描述性统计量
+
+```
+
+&emsp;&emsp;**glimpse()**函数展示了数据的观察长度(Observations)，值为8124；变量数(Variables)为23；及各个变量的名称、属性和其对应的值。
+
+&emsp;&emsp;通过观察**summary()**的输出结果可知，数据中的第17列(veil.type)只存在一个值。恒定变量在数据中是没有任何作用的，所以接下来要剔除此变量。
+
+```{r}
+
+mydata$veil.type <- NULL # 剔除此变量
+
+```
+
+## 分割训练集与测试集 
+
+&emsp;&emsp;使用creat包中的**createDataPartition()**函数对数据进行分层抽样，以3:7的比例划分测试集和训练集，并分别保存在train和test两个变量中，设置随机种子以保证实验结果相同。
+
+```{r}
+
+# install.packages("caret")
+library(caret)
+
+set.seed(12) # 设置随机种子，保持随机抽样一致性
+
+# 对数据集进行分层抽样，设置训练集占比为70%
+index <- createDataPartition(1:nrow(mydata), p = 0.7, list = FALSE) 
+train <- mydata[index,] # 抽取70%的数据作为训练集
+test <- mydata[-index,] # 抽取30%的数据作为测试集
+
+```
+
+&emsp;&emsp;使用**prop.table()**函数查看抽样与总体之间是否吻合。**prop.table()**函数在此处计算出了每个类别所对应的频率。
+
+```{r}
+
+prop.table(table(mydata$class)) # 统计每个类别所对应的频率
+prop.table(table(train$class))  # 统计每个类别所对应的频率
+prop.table(table(test$class))   # 统计每个类别所对应的频率
+
+```
+
+&emsp;&emsp;可以看出mydata，train，test返回的值大致相同，因此抽样与总体之间相较吻合。
+
+## 特征工程
+
+&emsp;&emsp;原数据为23列8124行的数据，进行预处理删除一列，除去因变量class后依旧剩下21列特征，特征数量依旧过多，我们需要选择有意义的特征输入机器学习的算法和模型进行训练。在这里我们使用caret包中方法进行特征选择。
+
+```{r}
+
+rfeControls.nb <- rfeControl(             # 设置rfe函数的控制参数
+  functions = nbFuncs,                    # 使用朴素贝叶斯算法
+  method = 'cv',                          # 使用交叉验证的抽样方法
+  number = 5)                             # 指定5折交叉验证
+
+fs.nb <- rfe(x = train[,-1],              # 指定输入变量
+             y = train[,1],               # 指定输出变量
+             sizes = seq(4,21,2),         # 指定保留特征的数量
+             rfeControl = rfeControls.nb) # 指定控制参数
+
+```
+
+&emsp;&emsp;在这里我们使用封装发的特征递减发来选择变量，函数及参数说明如下：
+
+* 使用**rfeControl()**函数来设置**rfe()**函数的控制参数，其中采用贝叶斯函数(nbFuncs)和5次10则交叉验证的方法进行设置。
+* 通过**rfe()**函数进行特征选择，其中x指定输入变量，y指定输出变量，sizes指定需要保留的特征项，并待入上述设置的控制参数。
+
+```{r}
+
+plot(fs.nb, class = c('g','o')) # 通过可视化查看选择效果
+fs.nb$optVariables # 展示筛选变量
+
+```
+
+&emsp;&emsp;特征选择后通过**plot()**函数可视化可以看出当选择16个变量时模型效果达到最优，并通过**fs.nb$optVariables**展示出选择的16个特征变量。
+
+## 朴素贝叶斯建模
+
+***
+&emsp;&emsp;本部分主要介绍和朴素贝叶斯核心函数的使用方法以及对蘑菇(mushrooms)数据的建模预测，细化介绍如下：
+
+### NaiveByaes()函数简介
+
+&emsp;&emsp;在进行建模先对贝叶斯的核心函数进行介绍，在本次实验中使用的是klaR包中的**NaiveByaes()**函数，其主要作用是使用贝叶斯规则计算给定独立变量的分类变量的条件A后验概率。该函数总共有两种构建格式，分别是公式formula格式和默认格式。
+
+NaiveBayes(formula, data, ..., subset, na.action = na.pass)<br>
+NaiveBayes(x, grouping, prior, usekernel = FALSE, fL = 0, ...)
+
+&emsp;&emsp;下面列举出**NaiveByaes()**函数的常用参数及其对应的解释：
+
+* **formula：**指定参与模型计算的变量，以公式形式给出，类似于y=x1+x2+x3；
+* **data：**用于指定需要分析的数据对象；
+* **na.action：**指定缺失值的处理方法，默认情况下不将缺失值纳入模型计算，也不会发生报错信息，当设为“na.omit”时则会删除含有缺失值的样本；
+* **x：**指定需要处理的数据，可以是数据框形式，也可以是矩阵形式；
+* **grouping：**为每个观测样本指定所属类别；
+* **prior：**可为各个类别指定先验概率，默认情况下用各个类别的样本比例作为先验概率；
+* **usekernel：**指定密度估计的方法(在无法判断数据的分布时，采用密度密度估计方法)，默认情况下使用正态分布密度估计，设为TRUE时，则使用核密度估计方法；
+* **fL：**指定是否进行拉普拉斯修正，默认情况下不对数据进行修正，当数据量较小时，可以设置该参数为1，即进行拉普拉斯修正。
+
+### 数据建模
+
+&emsp;&emsp;上面我们已经在特征工程中筛选出了重要的变量，下面我们就利用上面筛选的数据进行建模：
+
+* 将经过特征选择的变量和因变量class放入vars中，用于选择变量；
+* 使用**NaiveBayes()**的函数形式进行建模，并将模型赋值给fit变量
+
+```{r,}
+
+# install.packages("klaR")
+library(klaR)
+
+vars <- c('class',fs.nb$optVariables)             # 选择特征变量
+fit <- NaiveBayes(class ~ ., data = train[,vars]) # 拟合朴素贝叶斯模型
+
+```
+
+### 模型输出量解释 {.tabset .tabset-fade .tabset-pills}
+
+&emsp;&emsp;在上一步中，模型被记为fit，在这一步骤中我们将对模型常用的输出项及其对应的意义做说明：
+
+#### names()
+
+&emsp;&emsp;显示出fit中所包含的输出项的名称
+
+```{r}
+
+names(fit) # 展示输出项的名称
+
+```
+
+#### model$apriori
+
+&emsp;&emsp;输出中的apriori记录了该次执行过程中使用的先验概率
+
+```{r}
+
+fit$apriori # 展示先验概率
+
+```
+&emsp;&emsp;从apriori项中可以看出，标记为e(即可食用)的蘑菇占51.78%;标记为p(即有毒)的蘑菇占48.21%。
+
+#### model$tables
+
+&emsp;&emsp;输出中的tables记录了建立判别规则的所有变量在各类别下的条件概率(后验概率)
+
+```{r}
+
+fit$tables # 展示后验概率
+
+```
+&emsp;&emsp;上述输出中展示了在不同特征中的蘑菇分别为有毒或可食用的概率大小，比如当菌褶颜色(gill.color)为浅黄色(b)时，它可食用的概率为0，有毒的概率为0.44。
+
+
+#### others
+
+&emsp;&emsp;本项中包含判别变量等级项,判别命令项，是否使用标准密度估计，特征变量名等输出项
+
+```{r,}
+
+fit$levels # 判别变量等级项
+
+```
+&emsp;&emsp;输出显示存在两个levels，分别为e和p。
+
+```{r}
+
+fit$call # 判别命令项
+
+```
+&emsp;&emsp;输出模型的判别命令项
+
+```{r}
+
+fit$usekernel # 是否使用标准密度估计
+
+```
+&emsp;&emsp;输出表示模型没有使用标准密度估计
+
+```{r}
+
+fit$varnames # 特征变量名
+
+```
+&emsp;&emsp;输出展示出了用于构建模型的16个特征变量名称。
+
+### 模型预测
+
+&emsp;&emsp;对测试集使用**predict()**函数，进行模型预测:
+
+* 在newdata中带入先前划分好的测试集，即test数据，同时依旧在test中选择用vars保留的特征列，并删除位于第一列的因变量class列,将模型的预测结果赋值给pred变量。
+* 输出结果包括各样本的预测类别class和预测过程中各样本属于每一个类别的后验概率posterior。
+
+```{r,}
+
+pred <- predict(fit, newdata = test[,vars][,-1]) # 对测试集进行预测
+
+```
+
+&emsp;&emsp;pred的输出结果包括样本的预测类别和预测样本中属于每一类别的后验概率(posterior),其中后验概率大得一项被判定为相应类别。
+
+
+## 模型评估{.tabset .tabset-fade .tabset-pills}
+
+&emsp;&emsp;有很多标准可以用来衡量模型的好坏，本次实验采用了两种方式对朴素贝叶斯分类器进行评估，分别是混淆矩阵(Confusion Matrix)和ROC曲线(Receiver Operating Characteristic)，具体步骤展示如下：
+
+
+### Confusion Matrix
+
+&emsp;&emsp;混淆矩阵也称误差矩阵，是表示模型精度的一种格式，其结果通过将每个实测像元的位置和分类与分类图像中的相应位置和分类相比较计算得出。
+
+&emsp;&emsp;通过`table()`函数建立混淆矩阵来展示预测现象，其中第一个元素放置模型预测出的类别(pred$class)；第二个元素放置测试集真实的标签列(test[,1])。
+
+```{r}
+
+freq <- table(pred$class, test[,1]) # 构建混淆矩阵
+freq                                # 展示混淆矩阵
+
+```
+
+&emsp;&emsp;通过混淆矩阵可以看出，可食用得蘑菇被全部预测正确，但是有92种有毒得蘑菇被错误预测为可食用的蘑菇。下一步通过混淆矩阵的内容计算正确率。
+
+```{r}
+
+accuracy <- sum(diag(freq))/sum(freq) # 计算正确率
+accuracy                              # 展示正确率
+
+```
+
+&emsp;&emsp;可见模型正确率为95.4%，具有较高的分类准确率。
+
+### ROC curve
+
+&emsp;&emsp;ROC曲线和AUC值经常被用来作为二分类模型的评价标准，本部分通过pROC包中的**roc()**计算出模型的AUC值，并使用**plot()**函数绘制ROC曲线，下面简单介绍一下ROC曲线和AUC值：
+
+* ROC曲线全称为受试者工作特征曲线(receiver operating characteristic curve)，是根据一系列二分类器，以真阳性率为纵坐标，假阳性率为横坐标绘制的曲线。它能够容易地查出在不同界限值时的模型的识别能力和模型的准确率。
+* AUC(Area Under Curve)值为ROC曲线下的面积，AUC值越大，当前的分类算法越有可能将正样本排在负样本前面，即能够更好的分类。
+
+```{r}
+
+# install.packages("pROC")
+library(pROC)                  
+
+# 模型的AUC值
+modelroc <- roc(as.integer(test[,1]),
+                as.integer(factor(pred$class)))
+
+# 绘制ROC曲线
+plot(modelroc, print.auc = TRUE, auc.polygon = TRUE,
+     grid = c(0.1,0.2), grid.col = c('green','red'),
+     max.auc.polygon = TRUE, auc.polygon.col = 'steelblue')
+
+```
+
+&emsp;&emsp;由以上展示的ROC曲线可以看出不同界限下模型识别能力的变化；以及模型的AUC值为0.953，分类效果较佳。
+
+
+# 总结
+
+***
+&emsp;&emsp;朴素贝叶斯是一个高效且易于实现的算法，对小规模的数据表现很好，适合多分类任务，对缺失值也不是那么敏感；但是朴素贝叶斯算法也存在本身的限制，它对输入数据的表达形式很敏感，而且由于其对变量之间相互独立的假设在现实场景中很难实现，所以也会对分类的准确率带来一定影响。因此在使用朴素贝叶斯分类器时也要考虑是否是其适应的场景。
+
+# 参考文献
+
+***
+[1]黄文, 王正林. 数据挖掘 : R语言实战[M]. 电子工业出版社, 2014.
+
+</font>

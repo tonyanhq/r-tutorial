@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+
+
+
+<title>随机森林</title>
+
+<script src="1-randomforest_files/jquery-1.11.3/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="1-randomforest_files/bootstrap-3.3.5/css/united.min.css" rel="stylesheet" />
+<script src="1-randomforest_files/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="1-randomforest_files/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="1-randomforest_files/bootstrap-3.3.5/shim/respond.min.js"></script>
+<script src="1-randomforest_files/jqueryui-1.11.4/jquery-ui.min.js"></script>
+<link href="1-randomforest_files/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="1-randomforest_files/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="1-randomforest_files/navigation-1.1/tabsets.js"></script>
+<script src="1-randomforest_files/navigation-1.1/codefolding.js"></script>
+
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+div.sourceCode { overflow-x: auto; }
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; background-color: #f8f8f8; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+pre, code { background-color: #f8f8f8; }
+code > span.kw { color: #204a87; font-weight: bold; } /* Keyword */
+code > span.dt { color: #204a87; } /* DataType */
+code > span.dv { color: #0000cf; } /* DecVal */
+code > span.bn { color: #0000cf; } /* BaseN */
+code > span.fl { color: #0000cf; } /* Float */
+code > span.ch { color: #4e9a06; } /* Char */
+code > span.st { color: #4e9a06; } /* String */
+code > span.co { color: #8f5902; font-style: italic; } /* Comment */
+code > span.ot { color: #8f5902; } /* Other */
+code > span.al { color: #ef2929; } /* Alert */
+code > span.fu { color: #000000; } /* Function */
+code > span.er { color: #a40000; font-weight: bold; } /* Error */
+code > span.wa { color: #8f5902; font-weight: bold; font-style: italic; } /* Warning */
+code > span.cn { color: #000000; } /* Constant */
+code > span.sc { color: #000000; } /* SpecialChar */
+code > span.vs { color: #4e9a06; } /* VerbatimString */
+code > span.ss { color: #4e9a06; } /* SpecialString */
+code > span.im { } /* Import */
+code > span.va { color: #000000; } /* Variable */
+code > span.cf { color: #204a87; font-weight: bold; } /* ControlFlow */
+code > span.op { color: #ce5c00; font-weight: bold; } /* Operator */
+code > span.pp { color: #8f5902; font-style: italic; } /* Preprocessor */
+code > span.ex { } /* Extension */
+code > span.at { color: #c4a000; } /* Attribute */
+code > span.do { color: #8f5902; font-weight: bold; font-style: italic; } /* Documentation */
+code > span.an { color: #8f5902; font-weight: bold; font-style: italic; } /* Annotation */
+code > span.cv { color: #8f5902; font-weight: bold; font-style: italic; } /* CommentVar */
+code > span.in { color: #8f5902; font-weight: bold; font-style: italic; } /* Information */
+div.sourceCode {
+  overflow-x: visible;
+}
+</style>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+
+
+<style type="text/css">
+h1 {
+  font-size: 34px;
+}
+h1.title {
+  font-size: 38px;
+}
+h2 {
+  font-size: 30px;
+}
+h3 {
+  font-size: 24px;
+}
+h4 {
+  font-size: 18px;
+}
+h5 {
+  font-size: 16px;
+}
+h6 {
+  font-size: 12px;
+}
+.table th:not([align]) {
+  text-align: left;
+}
+</style>
+
+
+</head>
+
+<body>
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+code {
+  color: inherit;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+img {
+  max-width:100%;
+  height: auto;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+</style>
+
+
+
+<div class="container-fluid main-container">
+
+<!-- tabsets -->
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+</script>
+
+<!-- code folding -->
+<style type="text/css">
+.code-folding-btn { margin-bottom: 4px; }
+</style>
+<script>
+$(document).ready(function () {
+  window.initializeCodeFolding("show" === "show");
+});
+</script>
+
+
+
+
+<script>
+$(document).ready(function ()  {
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_').toLowerCase();
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+  padding-left: 25px;
+  text-indent: 0;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row-fluid">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+
+<div class="fluid-row" id="header">
+
+<div class="btn-group pull-right">
+<button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
+<ul class="dropdown-menu" style="min-width: 50px;">
+<li><a id="rmd-show-all-code" href="#">Show All Code</a></li>
+<li><a id="rmd-hide-all-code" href="#">Hide All Code</a></li>
+</ul>
+</div>
+
+
+
+<h1 class="title toc-ignore">随机森林</h1>
+
+</div>
+
+
+<div class="section level1">
+<h1><span class="header-section-number">1</span> 随机森林简介</h1>
+<p><font size=4 face="微软雅黑"></p>
+<hr />
+<p>  随机森林是一种比较新的机器学习模型，其与上面所讲的k近邻、朴素贝叶斯，决策树等这些算法最大的不同之处就是它是一种基于决策树的集成学习方法，其中每一颗树都依赖于一个随机向量，森林中所有的向量都是独立分布的。</p>
+<p>  随机森林的实质就是对数据集的列变量和行观测进行随机化，生成多个分类数，最终将分类树结果进行汇总，把汇总后的结果作为最终的预测结果。</p>
+</div>
+<div class="section level1">
+<h1><span class="header-section-number">2</span> 随机森林原理及优缺点</h1>
+<hr />
+<p>  我们在决策树这一节已经介绍了决策树的原理，随机森林就是由多个<strong>未剪枝</strong>的CART分类决策树组成，其不仅可以做回归，还可以做分类。其做回归时返回的结果是单棵树输出结果的简单平均，做分类时的返回结果是单棵树输出结果的众数。</p>
+<div class="section level2">
+<h2><span class="header-section-number">2.1</span> 构建流程</h2>
+<p>  随机森林的构建流程并不复杂，其主要流程如下：</p>
+<ul>
+<li>应用Bootstrap重采样方法有放回地随机抽取n个新的自助样本集</li>
+<li>随机从所有变量中抽取m个变量作为子数据集的变量</li>
+<li>对k个含有m个变量的子数据集分别构建CART树，其他子数据集作为测试集</li>
+<li>把需要预测的数据代入生成的多个CART树，根据每棵树的投票结果取票数最高的一个类别</li>
+</ul>
+</div>
+<div class="section level2">
+<h2><span class="header-section-number">2.2</span> 性能</h2>
+<ul>
+<li>每棵CART树生长越茂盛，组成的随机森林的性能越好</li>
+<li>每棵树之间独立性越高，租成的随机森林的性能越好</li>
+</ul>
+</div>
+<div class="section level2">
+<h2><span class="header-section-number">2.3</span> 优缺点</h2>
+<hr />
+<table>
+<thead>
+<tr class="header">
+<th align="left">优点</th>
+<th align="left">缺点</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">可以适用于大多数问题，可处理噪声和缺失值；分类和连续性特征数据</td>
+<td align="left">训练和预测比较慢</td>
+</tr>
+<tr class="even">
+<td align="left">两个随机性的引入，使模型不容易过拟合</td>
+<td align="left">在分类问题中，若目标数据集偏小并变量类别过多，则表现较差</td>
+</tr>
+<tr class="odd">
+<td align="left">处理高维度的数据时，可以不用做很详细的征选择</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">在创建随机森林的时候，对generlization error使用的是无偏估计</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">可以返回变量的重要性</td>
+<td align="left"></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="section level1">
+<h1><span class="header-section-number">3</span> 案例实战</h1>
+<p>  本案例的主要内容就是使用随机森林对R中自带的iris数据集进行分类。</p>
+<p>  在R中常用randomforst程序包的实现随机森林算法，该包主要涉及到3个重要的函数，每个参数的详细信息详见下方：</p>
+<p><strong>1)randomForest()函数用于构建随机森林模型</strong></p>
+<p>randomForest(formula, data=NULL, …, subset, na.action=na.fail)</p>
+<p>randomForest(x, y=NULL, xtest=NULL, ytest=NULL, ntree=500,<br>        mtry=if (!is.null(y) &amp;&amp; !is.factor(y))<br>        max(floor(ncol(x)/3), 1) else floor(sqrt(ncol(x))),<br>        replace=TRUE, classwt=NULL, cutoff, strata,<br>        sampsize = if (replace) nrow(x) else ceiling(.632*nrow(x)),<br>        nodesize = if (!is.null(y) &amp;&amp; !is.factor(y)) 5 else 1,<br>        maxnodes = NULL,<br>        importance=FALSE, localImp=FALSE, nPerm=1,<br>        proximity, oob.prox=proximity,<br>        norm.votes=TRUE, do.trace=FALSE,<br>        keep.forest=!is.null(y) &amp;&amp; is.null(xtest), corr.bias=FALSE,<br>        keep.inbag=FALSE, …)</p>
+<ul>
+<li><strong>formula：</strong>指定模型的公式形式，类似于y~x1+x2+x3…;</li>
+<li><strong>data：</strong>指定分析的数据集；</li>
+<li><strong>subset：</strong>以向量的形式确定样本数据集；</li>
+<li><strong>na.action：</strong>指定数据集中缺失值的处理方法，默认为na.fail，即不允许出现缺失值，也可以指定为na.omit，即删除缺失样本；</li>
+<li><strong>x：</strong>指定模型的解释变量，可以是矩阵，也可以是数据框；</li>
+<li><strong>y：</strong>指定模型的因变量，可以是离散的因子，也可以是连续的数值，分别对应于随机森林的分类模型和预测模型。这里需要说明的是，如果不指定y值，则随机森林将是一个无监督的模型； <strong>xtest</strong>和<strong>ytest</strong>用于预测的测试集；</li>
+<li><strong>ntree：</strong>指定随机森林所包含的决策树数目，默认为500；</li>
+<li><strong>mtry：</strong>指定节点中用于二叉树的变量个数，默认情况下数据集变量个数的二次方根(分类模型)或三分之一(预测模型)。一般是需要进行人为的逐次挑选，确定最佳的m值；</li>
+<li><strong>replace：</strong>指定Bootstrap随机抽样的方式，默认为有放回的抽样；</li>
+<li><strong>classwt：</strong>指定分类水平的权重，对于回归模型，该参数无效；</li>
+<li><strong>strata：</strong>为因子向量，用于分层抽样；</li>
+<li><strong>sampsize：</strong>用于指定样本容量，一般与参数strata联合使用，指定分层抽样中层的样本量；</li>
+<li><strong>nodesize：</strong>指定决策树节点的最小个数，默认情况下，判别模型为1，回归模型为5；</li>
+<li><strong>maxnodes：</strong>指定决策树节点的最大个数；</li>
+<li><strong>importance：</strong>逻辑参数，是否计算各个变量在模型中的重要性，默认不计算，该参数主要结合importance()函数使用；</li>
+<li><strong>proximity：</strong>逻辑参数，是否计算模型的临近矩阵，主要结合MDSplot()函数使用；</li>
+<li><strong>oob.prox：</strong>是否基于OOB数据计算临近矩阵；</li>
+<li><strong>norm.votes：</strong>显示投票格式，默认以百分比的形式展示投票结果，也可以采用绝对数的形式；</li>
+<li><strong>do.trace：</strong>是否输出更详细的随机森林模型运行过程，默认不输出；</li>
+<li><strong>keep.forest：</strong>是否保留模型的输出对象，对于给定xtest值后，默认将不保留算法的运算结果。</li>
+</ul>
+<p><strong>2)importance()函数用于计算模型变量的重要性</strong></p>
+<p>importance(x, type=NULL, class=NULL, scale=TRUE, …)</p>
+<ul>
+<li><strong>x：</strong>为randomForest对象；</li>
+<li><strong>type”</strong>可以是1，也可以是2，用于判别计算变量重要性的方法，1表示使用精度平均较少值作为度量标准；2表示采用节点不纯度的平均减少值最为度量标准。值越大说明变量的重要性越强；</li>
+<li><strong>scale：</strong>默认对变量的重要性值进行标准化。</li>
+</ul>
+<p><strong>3)MDSplot()绘制建立模型过程中产生的临近矩阵经过标准化后的坐标图，就是可以将高位图缩放到任意小的维度下来观看模型各个类别在不同维度下的分布情况</strong></p>
+<p>MDSplot(rf, fac, k=2, palette=NULL, pch=20, …)</p>
+<ul>
+<li><strong>rf：</strong>为randomForest对象，需要说明的是，在构建随机森林模型时必须指定计算临近矩阵，即设置proximity参数为TRUE；</li>
+<li><strong>fac：</strong>指定随机森林模型中所使用到的因子向量(因变量)；</li>
+<li><strong>palette：</strong>指定所绘图形中各个类别的颜色；</li>
+<li><strong>pch：</strong>指定所绘图形中各个类别形状；</li>
+</ul>
+<p><strong>4)rfImpute()函数可为存在缺失值的数据集进行插补(随机森林法)，得到最优的样本拟合值</strong></p>
+<p>rfImpute(x, y, iter=5, ntree=300, …)</p>
+<p>rfImpute(x, data, …, subset)</p>
+<ul>
+<li><strong>x：</strong>为存在缺失值的数据集；</li>
+<li><strong>y：</strong>为因变量，不可以存在缺失情况；</li>
+<li><strong>iter：</strong>指定插值过程中迭代次数；</li>
+<li><strong>ntree：</strong>指定每次迭代生成的随机森林中决策树数量；</li>
+<li><strong>subset：</strong>以向量的形式指定样本集。</li>
+</ul>
+<p><strong>5)treesize()函数用于计算随机森林中每棵树的节点个数</strong></p>
+<p>treesize(x, terminal=TRUE)</p>
+<ul>
+<li><strong>x：</strong>为randomForest对象；</li>
+<li><strong>terminal：</strong>指定计算节点数目的方式，默认只计算每棵树的根节点，设置为FALSE时将计算所有节点(根节点+叶节点)。</li>
+</ul>
+<hr />
+<div class="section level2">
+<h2><span class="header-section-number">3.1</span> 获取并探索数据</h2>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">mydata &lt;-<span class="st"> </span>iris
+<span class="kw">str</span>(mydata)</code></pre></div>
+<pre><code>## &#39;data.frame&#39;:    150 obs. of  5 variables:
+##  $ Sepal.Length: num  5.1 4.9 4.7 4.6 5 5.4 4.6 5 4.4 4.9 ...
+##  $ Sepal.Width : num  3.5 3 3.2 3.1 3.6 3.9 3.4 3.4 2.9 3.1 ...
+##  $ Petal.Length: num  1.4 1.4 1.3 1.5 1.4 1.7 1.4 1.5 1.4 1.5 ...
+##  $ Petal.Width : num  0.2 0.2 0.2 0.2 0.2 0.4 0.3 0.2 0.2 0.1 ...
+##  $ Species     : Factor w/ 3 levels &quot;setosa&quot;,&quot;versicolor&quot;,..: 1 1 1 1 1 1 1 1 1 1 ...</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">summary</span>(mydata)</code></pre></div>
+<pre><code>##   Sepal.Length    Sepal.Width     Petal.Length    Petal.Width   
+##  Min.   :4.300   Min.   :2.000   Min.   :1.000   Min.   :0.100  
+##  1st Qu.:5.100   1st Qu.:2.800   1st Qu.:1.600   1st Qu.:0.300  
+##  Median :5.800   Median :3.000   Median :4.350   Median :1.300  
+##  Mean   :5.843   Mean   :3.057   Mean   :3.758   Mean   :1.199  
+##  3rd Qu.:6.400   3rd Qu.:3.300   3rd Qu.:5.100   3rd Qu.:1.800  
+##  Max.   :7.900   Max.   :4.400   Max.   :6.900   Max.   :2.500  
+##        Species  
+##  setosa    :50  
+##  versicolor:50  
+##  virginica :50  
+##                 
+##                 
+## </code></pre>
+<p>  从上述简单的数据探索中发现，数据一共五列。其中四列是数值型，一列是因子型，并且因子型变量的因子水平一致，每个水平的观测均是50个。</p>
+</div>
+<div class="section level2">
+<h2><span class="header-section-number">3.2</span> 分层抽样</h2>
+<p>  分层抽样，又称分组抽样。是一种比SRS更精准的随机抽样法，所用的方法是跟据我们的研究性质，依照相关的条件把母群体中的个体分成不同的层别或组别(strata)，再分别从每一层别或组别中的个体随机抽出一定的个体来组成样本。</p>
+<p>  在caret程序包中提供了一种非常方便的分层抽样函数<strong>createDataPartition()</strong>，下面是该函数的参数解释：</p>
+<p>createDataPartition(y, times = 1, p = 0.5, list = TRUE, groups = min(5, length(y)))</p>
+<ul>
+<li><strong>y：</strong>指定数据集中的输出变量</li>
+<li><strong>times：</strong>指定创建的样本个数，默认简单随机抽取一组样本</li>
+<li><strong>p：</strong>指定数据集中用于训练集的比例</li>
+<li><strong>list：</strong>是否已列表或矩阵的形式存储随机抽取的索引号，默认为TRUE</li>
+<li><strong>groups：</strong>如果输出变量为数值型数据，则默认按分位数分组进行取样</li>
+</ul>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># install.packages(&quot;caret&quot;)</span>
+<span class="kw">library</span>(caret)
+
+<span class="kw">set.seed</span>(<span class="dv">45</span>)
+idx &lt;-<span class="st"> </span><span class="kw">createDataPartition</span>(<span class="dt">y =</span> mydata$Species, <span class="dt">p =</span> <span class="fl">0.7</span>, <span class="dt">list =</span> F)
+
+trainset &lt;-<span class="st"> </span>mydata[idx, ]
+testset &lt;-<span class="st"> </span>mydata[-idx, ]
+
+<span class="kw">prop.table</span>(<span class="kw">table</span>(mydata$Species)) <span class="co"># 计算原数据集中Species的占比</span></code></pre></div>
+<pre><code>## 
+##     setosa versicolor  virginica 
+##  0.3333333  0.3333333  0.3333333</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">prop.table</span>(<span class="kw">table</span>(trainset$Species)) <span class="co"># 计算训练集中Species的占比</span></code></pre></div>
+<pre><code>## 
+##     setosa versicolor  virginica 
+##  0.3333333  0.3333333  0.3333333</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">prop.table</span>(<span class="kw">table</span>(testset$Species)) <span class="co"># 计算测试集中Species的占比</span></code></pre></div>
+<pre><code>## 
+##     setosa versicolor  virginica 
+##  0.3333333  0.3333333  0.3333333</code></pre>
+<p>  通过分层抽样，我们把数据拆分为了训练集和测试集，并计算其对应的因变量的比例，发现每个数据集中各个类别的比例均是0.33，说明达到了分层抽样的目的。</p>
+</div>
+<div class="section level2">
+<h2><span class="header-section-number">3.3</span> 训练模型</h2>
+<p>  我们使用上面提到的<strong>randomForest()</strong>函数对训练集训练模型，设置随机变量的个数为3，树的个数为30，并且计算其变量重要性。</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># install.packages(&quot;randomForest&quot;)</span>
+<span class="kw">library</span>(randomForest)
+
+<span class="kw">set.seed</span>(<span class="dv">45</span>)
+rf &lt;-<span class="st"> </span><span class="kw">randomForest</span>(Species ~., <span class="dt">data =</span> trainset, <span class="dt">mtry =</span> <span class="dv">3</span>, <span class="dt">ntree =</span> <span class="dv">30</span>, <span class="dt">importance =</span> T)</code></pre></div>
+</div>
+<div class="section level2">
+<h2><span class="header-section-number">3.4</span> 展示变量重要性</h2>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">imp &lt;-<span class="st"> </span><span class="kw">importance</span>(<span class="dt">x =</span> rf) <span class="co"># 计算变量重要性</span>
+imp</code></pre></div>
+<pre><code>##                setosa versicolor virginica MeanDecreaseAccuracy
+## Sepal.Length 0.000000   2.659596  1.428697             3.458823
+## Sepal.Width  0.000000   0.000000  2.127039             2.045518
+## Petal.Length 4.705308   6.126779  5.735264             6.413416
+## Petal.Width  6.510190  10.718260 11.020814            10.340348
+##              MeanDecreaseGini
+## Sepal.Length         1.118633
+## Sepal.Width          1.261948
+## Petal.Length        24.540647
+## Petal.Width         42.307979</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">varImpPlot</span>(rf) <span class="co"># 展示变量重要性</span></code></pre></div>
+<p><img src="1-randomforest_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
+<p>  上面使用MeanDecreaseAccuracy和MeanDecreaseGini两种指标衡量了各个变量的重要性，发现最重要的是Patal.Width，其次是Patal.Length这两个变量，从一定程度上也说明了鸢尾花的分类与花瓣有比较大的关系。</p>
+</div>
+<div class="section level2">
+<h2><span class="header-section-number">3.5</span> 预测且评估</h2>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">pred &lt;-<span class="st"> </span><span class="kw">predict</span>(rf, testset[-<span class="dv">5</span>]) <span class="co"># 对测试集进行预测</span>
+<span class="kw">table</span>(pred, testset$Species)</code></pre></div>
+<pre><code>##             
+## pred         setosa versicolor virginica
+##   setosa         15          0         0
+##   versicolor      0         15         1
+##   virginica       0          0        14</code></pre>
+<p>  从混淆矩阵中可以看出，仅有一个样本被预测错误(一个virginica的鸢尾花被错误的分类为了versicolor)，改模型的分类效果还是非常好的。</p>
+</div>
+</div>
+<div class="section level1">
+<h1><span class="header-section-number">4</span> 参考文献</h1>
+<hr />
+<p>[1] 卡巴科弗. R语言实战[M]. 人民邮电出版社, 2013.<br> [2] 机器学习——随机森林算法及原理. <a href="https://blog.csdn.net/nieson2012/article/details/51279332v" class="uri">https://blog.csdn.net/nieson2012/article/details/51279332v</a>. 2016.<br> [3] 教你使用caret包(一)–数据预处理. <a href="https://mp.weixin.qq.com/s/EXq9B-imnX6D27okYvPGkw" class="uri">https://mp.weixin.qq.com/s/EXq9B-imnX6D27okYvPGkw</a>. 2016<br> [4] 基于R语言的随机森林算法运用. <a href="https://mp.weixin.qq.com/s?__biz=MzIxNjA2ODUzNg" class="uri">https://mp.weixin.qq.com/s?__biz=MzIxNjA2ODUzNg</a>==&amp;mid=400806663&amp;idx=1&amp;sn=51b4b7a44a33606bd9262e208f91c2df&amp;mpshare=1&amp;scene=23&amp;srcid=0621JANvo04Zy7uaMQt5kxbg#rd. 2015<br> [6] 机器学习十大算法—8. 随机森林算法. <a href="https://blog.csdn.net/julialove102123/article/details/78405284" class="uri">https://blog.csdn.net/julialove102123/article/details/78405284</a>. 2017</p>
+<p></font></p>
+</div>
+
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

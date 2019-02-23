@@ -1,0 +1,448 @@
+---
+title: "回归分析"
+output: 
+  html_document: 
+    toc: TRUE
+    toc_float: TRUE
+    code_folding: show
+    fig_width: 7
+    fig_height: 4.5
+    theme: united
+    highlight: tango
+---
+# 1 线性回归
+***
+##1.1 数学模型
+
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;回归分析通过提供变量间的数学表达式来定量描述变量间相关关系的数学过程。比如说研究税收和财政收入的关系、研究身高和体重的关系、研究房价和面积、城区的关系等等。回归分析包括一元线性回归、多元线性回归、多项式回归、逻辑回归、定序回归等等。
+
+&emsp;&emsp;一元线性回归模型通过回归分析研究两变量之间的依存关系，将变量区分出来自变量和因变量，并研究确定自变量和因变量之间的具体关系的方程式。因变量必须是连续型变量，或者是近似连续的变量。
+
+&emsp;&emsp;一元线性回归就涉及到了两个变量：因变量$y$、自变量$x$。那么下面就给大家展示一元线性回归方程表达式：
+$$y=\beta_0+\beta_1x+\mu$$
+&emsp;&emsp;表达式中各个系数的含义：
+
+&emsp;&emsp;* $x$：自变量<br>
+&emsp;&emsp;* $y$：因变量<br>
+&emsp;&emsp;* $\beta_0$：俗称截距项，是当$x=0$时，$y$的值<br>
+&emsp;&emsp;* $\beta_1$：俗称斜率，是整个回归的核心<br>
+&emsp;&emsp;* $\mu$：干扰项，是X这一因素外的其他因素对$y$的影响的大小。
+
+&emsp;&emsp;多元线性回归方程表达式即是多个因素影响因变量的方程式：
+$$y=\beta_0+\beta_1x_1+\beta_2x_2+\beta_3x_3+\mu$$
+
+</font>
+
+##1.2 回归参数估计
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;从上面的表达式中不难看出，要想得到具体的这个回归模型，我们得估计出$\beta_0$和$\beta_1$。常见的系数估计方法有：极大似然估计、最小二乘法、梯度下降法、M-估计等等，下面我们介绍最常用的最小二乘法。
+
+&emsp;&emsp;使用最小二乘法拟合回归系数，并且得到最优的一元回归线的前提就是：估计出的$\beta_0$和$\beta_1$得使上图中的所有$\mu^2$(残差平方和)的平方和最小。用最小二乘法估计参数的推导过程如下：
+
+**1. 写出拟合方程**
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;我们将要拟合的方程一元线性方程是：$y=\beta_0+\beta_1x$
+
+</font>
+
+**2. 现有样本点$(x,y)$**
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;我们用来拟合方程的样本点为：$(x_1, y_1),(x_2, y_2)...(x_n, y_n)$
+
+
+</font>
+
+**3. 残差(Residual)**
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;残差就是预测值与真实值的距离，我们在此假设残差为$\mu_i$，则$\mu_i=y_i-(\beta_0+\beta_1x_i)$
+
+</font>
+
+**4. 残差平方和(SSR)**
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;$D=\sum\limits_{i=1}^{n}\mu_i^2=\sum\limits_{i=1}^{n}(y_i-\beta_0-\beta_1x_i)^2$
+
+</font>
+
+**5. 估计系数$\beta_0$和$\beta_1$**
+
+&emsp;&emsp;根据一阶导数等于0，二阶大于等于0（证明略）求出未知参数。
+
+&emsp;&emsp;(1)对$\beta_0$求偏导
+
+&emsp;&emsp;令 $G=y_i-\beta_0-\beta_1x_i$，则 $D=\sum\limits_{i=1}^nG^2$
+
+$$\begin{aligned}
+\frac{\partial D}{\partial \beta_0} &=2GG' \\
+&=\sum\limits_{i=1}^{n}2(y_i-\beta_0-\beta_1x_i)(-1)\\
+&=-2\sum\limits_{i=1}^{n}(y_i-\beta_0-\beta_1x_i)\\
+&=-2(\sum\limits_{i=1}^{n}y_i-\sum\limits_{i=1}^{n}a-b\sum\limits_{i=1}^{n}x_i)\\
+&=-2(n\bar{y}-n\beta_0-n\beta_1\bar{x}) 
+\end{aligned}$$
+
+&emsp;&emsp;(2)对$\beta_1$求偏导
+$$\begin{aligned}
+\frac{\partial D}{\partial \beta_1} &=2GG'\\
+&=\sum\limits_{i=1}^{n}2(y_i-\beta_0-\beta_1x_i)(-x_i)\\
+&=-2\sum\limits_{i=1}^{n}(x_iy_i-\beta_0x_i-\beta_1x_i^2)\\
+&=-2(\sum\limits_{i=1}^{n}x_iy_i-\sum\limits_{i=1}^{n}\beta_0x_i-\sum\limits_{i=1}^{n}\beta_1x_i^2)\\
+&=-2(\sum\limits_{i=1}^{n}x_iy_i-n\beta_0\bar{x}-\beta_1\sum\limits_{i=1}^{n}x_i^2) 
+\end{aligned}$$
+
+&emsp;&emsp;(3)令偏导 $\frac{\partial D}{\partial \beta_0}=0$得：
+$$\begin{alignat}{2}
+&-2(n\bar{y}-n\beta_0-n\beta_1\bar{x})=0\\
+&\Rightarrow\color{red}{\beta_0=\bar{y}-\beta_1\bar{x}}
+\end{alignat}$$
+
+&emsp;&emsp;(4)令 $\frac{\partial D}{\partial \beta_1}=0$，并将(3)代入得：
+$$\begin{alignat}{2}
+&-2(\sum\limits_{i=1}^{n}x_iy_i-n\color{red}{\beta_0}\bar{x}-\beta_1\sum\limits_{i=1}^{n}x_i^2)=0\\
+&\Rightarrow\sum\limits_{i=1}^nx_1y_i-n\color{red}{\beta_0}\bar{x}-\beta_1\sum\limits_{i=1}^nx_i^2=0\\
+&\Rightarrow\sum\limits_{i=1}^nx_iy_i-n\bar{x}(\color{red}{\bar{y}-\beta_1\bar{x}})-\beta_1\sum\limits_{i=1}^nx_i^2=0\\
+&\Rightarrow\sum\limits_{i=1}^{n}x_iy_i-n\bar{x}\bar{y}=\beta_1(\sum\limits_{i=1}^{n}x_i^2-n\bar{x}^2)\\
+&\Rightarrow\beta_1=\frac{\sum\limits_{i=1}^{n}x_iy_i-n\bar{x}\bar{y}}{\sum\limits_{i=1}^{n}x_i^2-n\bar{x}^2}
+\end{alignat}$$
+&emsp;&emsp;又因为
+$$\begin{alignat}{2}
+\sum\limits_{i=1}^n(x_i-\bar{x})(y_i-\bar{y}) &= \sum\limits_{i=1}^nx_iy_i-n\bar{x}\bar{y}\\
+\sum\limits_{i=1}^n(x_i-\bar{x}) &= \sum\limits_{i=1}^nx_i^2-n\bar{x}^2
+\end{alignat}$$
+&emsp;&emsp;所以$\color{red}{\beta_1=\frac{\sum\limits_{i=1}^n(x_i-\bar{x})(y_i-\bar{y})}{\sum\limits_{i=1}^n(x_i-\bar{x})^2}}$
+
+&emsp;&emsp;已求得$\beta_0$、$\beta_1$，推导完成。
+</font>
+
+##1.3 回归方程的显著性检验
+
+<font size=4 face="微软雅黑">
+&emsp;&emsp;对于估计出的方程，还需要通过一些参数来评判模型是否合理。
+</font>
+
+###1.3.1 回归模型拟合优度
+
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;1. 可决系数
+
+&emsp;&emsp;拟合优度是指回归直线对观测值的拟合程度。度量拟合优度的统计量是可决系数（亦称确定系数）$R^2$。$R^2$最大值为1。$R^2$的值越接近1，说明回归直线对观测值的拟合程度越好；反之，$R^2$的值越小，说明回归直线对观测值的拟合程度越差。
+&emsp;&emsp;可决系数$R^2$：
+
+$$R^2=\frac{SSR}{SST}=\frac{\sum^n_{i=1}(\hat{y_i}-\bar{y})^2}{\sum^n_{i=1}(y_i-\bar{y})^2}$$
+&emsp;&emsp;一元线性回归的决定系数平方根等于相关系数。
+
+&emsp;&emsp;2. 估计标准误差
+
+&emsp;&emsp;均方误差为实际观察值与回归估计值的差距平方和的均方根，他体现了实际观察值在回归直线周围的分散状况。之所以估计标准误差是排除X对y的线性影响后，y的随机波动情况。
+$$R^2=\sqrt{MSE}=\sqrt{\frac{SSE}{n-k-1}}=\sqrt\frac{\sum^n_{i=1}(y_i-\hat{y})^2}{n-k-1}$$
+
+</font>
+
+###1.3.2 回归模型显著性检验
+
+<font size=4 face="微软雅黑">
+&emsp;&emsp;上面查看了拟合优度情况，但是有可能该方程在实际中是不存在的，这时需要检验因变量与**所有自变量和**之间是否存在显著的线性关系，即总体的显著性检验。
+
+&emsp;&emsp;检验方法是将回归离差平方和与误差离差平方和比较，构造F统计量来检验二者的差别是否显著。这里的原理同方差分析是一样的。
+
+&emsp;&emsp;1. 提出假设
+
+$$H_0:\beta_1=\beta_2=\beta_3=\beta_4=...=0 （线性关系不显著）\\
+H_1:\beta_1、\beta_2、\beta_3、\beta_4...至少有一个不等于0$$
+
+&emsp;&emsp;2. $F$统计量
+  $$F=\frac{SSR/k}{SSE/n-k-1}$$
+
+&emsp;&emsp;3. 判断
+  $$若F \geq F_{\alpha} $$
+
+&emsp;&emsp;拒绝原假设，否则接受。
+
+</font>
+
+###1.3.3 回归系数显著性检验
+<font size=4 face="微软雅黑">
+&emsp;&emsp;若回归方程通过了F检验，说明模型整体上是显著的，那么回归系数的检验就是用来确定每个自变量对因变量的影响是否显著。这里需要用t检验对每个自变量都要单独进行检验。在一元线性回归中，回归方程的显著性检验等价于回归系数的显著性检验，但是在多元线性回归中不成立。
+
+&emsp;&emsp;1. 提出假设：
+  $$H_0:\beta_i=0 （第i个自变量x与因变量y没有线性关系）\\H_1:\beta_i \neq 0（第i个自变量x与因变量y有线性关系）$$
+
+&emsp;&emsp;2. $t$统计量
+  $$t=\frac{\hat{\beta_i}}{S_{\hat{\beta_i}}}$$
+&emsp;&emsp;3. 判断
+
+$$若|t| \geq t_{\alpha/2}$$
+&emsp;&emsp;拒绝原假设，否则接受。
+</font>
+
+##1.4 回归诊断
+
+###1.4.1 回归诊断定义
+
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;前面的分析都建立在线性回归假设条件成立。首先，我们回顾一下线性回归的一系列前提假设,这些假设被称为高斯马尔科夫条件：
+
+&emsp;&emsp;* 自变量是确定的，不是随机的。
+
+&emsp;&emsp;* 误差项与自变量不相关。
+
+&emsp;&emsp;* 误差项服从N(0, σ^2)的正态分布，同方差和无序列相关性。
+
+&emsp;&emsp;在假设成立下，最小二乘估计量才是具有最小误差平方和的线性无偏估计。为此，人们提出所谓回归诊断的问题，内容有：
+
+&emsp;&emsp;* 误差项是否满足：A.独立性；B.同方差性；C.正态性
+
+&emsp;&emsp;* 是否存在异常样本？
+
+&emsp;&emsp;* 回归分析的结果是否对某些样本的依赖过重？即回归模型是否具备稳定性？
+
+</font>
+
+###1.4.2 异常值检测
+
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;1. LOF（local outlier factor，局部异常因子）
+
+&emsp;&emsp;LOF（局部异常因子）是基于密度识别局部异常值的算法。一个点的局部密度会与它的邻点进行比较。如果前者明显低于后者（有一个大于1的LOF值），该点位于一个稀疏区域。这就表明，该点是一个异常值。
+
+&emsp;&emsp;lofactor()函数使用LOF算法计算局部异常因子，并且它在DMwR和dprep包中是可用的。k是用于计算局部异常因子的邻居数量。下图呈现了一个异常值得分的密度图。
+```{r message=FALSE, warning=FALSE}
+str(trees)# 查看R内置数据集trees的结构
+library(DMwR)
+outlier.scores <- lofactor(trees, k = 10)
+plot(density(outlier.scores))
+outlier <- order(outlier.scores,decreasing = T)[1:5]#选出前五个异常值
+print(outlier)
+```
+
+&emsp;&emsp;2. Q-Q图
+
+&emsp;&emsp;落在置信区间带［－2，2］外的点即可被认为是离群点。详细见1.4.6节的QQ图。
+
+&emsp;&emsp;3. 用car包中的outlierTest函数检测
+```{r message=FALSE, warning=FALSE}
+library(car)
+attach(iris)
+lmodel <- lm(Petal.Length~Petal.Width)
+outlierTest(lmodel)# 显示离群点
+```
+&emsp;&emsp;outlierTest函数是根据单个最大（或正或负）残差值的显著性来判断是否有离群点，若不显著，则说明数据集中没有离群点，若显著，则必须删除该离群点，然后再检验是否还有其他离群点存在。
+</font>
+
+###1.4.3 独立性检验
+
+<font size=4 face="微软雅黑">
+&emsp;&emsp;car包提供了一个可做Durbin-Watson检验的函数，能够检测误差的序列相关性。
+```{r message=FALSE, warning=FALSE}
+library(car)
+attach(iris)
+lmodel <- lm(Petal.Length~Petal.Width)
+durbinWatsonTest(lmodel)
+```
+&emsp;&emsp;P值小于0.05，说明有自相关性，误差项之间不独立。
+</font>
+
+###1.4.4 正态性检验
+
+<font size=4 face="微软雅黑">
+&emsp;&emsp;正态性假设直接对残差用QQ图或者密度图可视化，或者用shapiro.test检验。
+```{r message=FALSE, warning=FALSE}
+attach(iris)
+res <- residuals(lm(Petal.Length~Petal.Width))
+plot(density(res))# 绘制密度图
+shapiro.test(res)# 正态性检验
+```
+&emsp;&emsp;从上图看出残差数据是正态分布的，而且shapiro.test检验结果P值大于0.05，也是接受原假设。
+</font>
+
+###1.4.5 同方差检验
+
+<font size=4 face="微软雅黑">
+&emsp;&emsp;可用图来检验同方差性，同方差性的条件下，点应在线的周围水平随机分布。非水平的曲线暗示着异方差性。方差非齐性时，有时可以通过对因变量做变换来改善。常用开方变换，对数变换，倒数变换和 BOX-COX 变换。
+```{r message=FALSE, warning=FALSE}
+library(car)
+attach(iris)
+lmodel <- lm(Petal.Length~Petal.Width)
+ncvTest(lmodel)  
+spreadLevelPlot(lmodel)
+```
+&emsp;&emsp;P值小于0.05，拒绝原假设，原假设是方差相等。而且图中是非水平的直线，所以该残差存在异方差性。  
+</font>
+
+###1.4.6 同时检验
+
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;1. R中除了对每个假设分开检验外，还可以可视化结果来查看假设条件的检验结果。
+```{r message=FALSE, warning=FALSE}
+attach(iris)
+lmodel <- lm(Petal.Length~Petal.Width)# 线性回归模型
+par(mfrow=c(2,2))# 将四个图合在一起
+plot(lmodel)# 可视化模型结果
+```
+&emsp;&emsp;左上图为残差与拟合图，用来检验线性，若散点集中分布在一条直线附近，则表示线性关系良好；右上图为QQ图，用来检验正态性，若散点集中分布在Q-Q图中的直线上，则表示残差正态性良好；左下图为位置尺度图，用来检验同方差性，若点在曲线周围随机分布，则表示同方差性成立；右下图为残差与杠杆图,可以观测出离群点、高杠杆点和强影响点。独立性是无法从图中分辨出来的。从右下图可以看出该模型的残差并未随机分布，而是呈现异方差的问题。
+
+&emsp;&emsp;2. gvlma包统一检验模型是否满足所有的假设。
+```{r message=FALSE, warning=FALSE}
+library(gvlma)
+lmodel <- lm(Petal.Length~Petal.Width)
+gvmodel <- gvlma(lmodel)
+summary(gvmodel)
+```
+&emsp;&emsp;从上面结果可以看出，F统计量得到的P值小于0.05，说明回归模型方程显著；t统计量对系数的显著性检验也是显著的；同时可决系数$R^2$等于0.9271，说明拟合程度很好，要是我们没有做假设条件的检验，就会误以为我们得到了正确的结果，但是在最后一项中的假设条件检验得到的Decision结果显示，Skewness和Kurtosis检验的是峰度和偏度，检验通过，说明正态性假设成立。第1,4,5项检验是不满足的，所以该方程估计结果有偏。
+</font>
+
+###1.4.7 多重共线性问题
+<font size=4 face="微软雅黑">
+&emsp;&emsp;多重共线性指模型的自变量间存在线性关系，当回归模型中两个及其以上的自变量彼此相关时，则称回归模型中存在多重共线性。而多重共线性不仅会因为自变量间相关性影响，同时也会随数据问题引起，比如样本量少，异常值出现等。那么如何检测多重共线性？这里引入方差膨胀因子VIF。
+
+```{r message=FALSE, warning=FALSE}
+library(car)
+str(mtcars)
+fit<-lm(mpg~hp+wt+disp+drat+qsec,data=mtcars) 
+vif(fit)
+```
+&emsp;&emsp;一般认为,当$0<VIF<10$,不存在多重共线性。所有变量的$VIF$值都小于10，那么这里不存在多重共线性问题。
+
+&emsp;&emsp;如何解决多重共线性呢？剔除引起共线性的变量或者使用主成分分析法降维。那么又怎么剔除变量呢？可以用逐步回归法，此法最常用的，也最有效。
+</font>
+
+#2 逐步回归分析  
+***
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;逐步回归分析是以AIC信息统计量为准则，通过选择最小的AIC信息统计量，来达到删除或增加变量的目的。R语言中用于逐步回归分析的函数有：step、drop1、add1。
+
+&emsp;&emsp;1. 先对数据进行多元线性回归分析
+```{r message=FALSE, warning=FALSE}
+fit<-lm(mpg~hp+wt+disp+drat+qsec,data=mtcars) 
+summary(fit)
+```
+&emsp;&emsp;多元线性回归结果显示只有wt变量显著。
+
+&emsp;&emsp;2. 逐步回归分析
+```{r message=FALSE, warning=FALSE}
+tstep <- step(fit)
+summary(tstep)
+```
+&emsp;&emsp;结果分析：当变量都存在时，AIC的值为65.47;去掉disp，回归方程的AIC值为64.21；去掉hp，回归方程的AIC值为63.89；由于去掉disp和hp可以使得AIC达到最小值，因此R会自动去掉disp和hp;去掉disp和hp之后，AIC的值都增加，逐步回归分析终止，得到当前最优的回归方程。回归系数的显著性水平有所提高，但是drat的显著性水平仍然不理想。
+
+&emsp;&emsp;3. 逐步回归分析的优化
+```{r message=FALSE, warning=FALSE}
+fit1 <- lm(mpg ~ wt + drat + qsec,data=mtcars)
+tstep <- step(fit1)
+drop1(tstep)
+```
+
+&emsp;&emsp;如果去掉drat，AIC的值从63.89增加到63.908，是三个变量中增加最小的。
+
+&emsp;&emsp;4. 再次多元回归分析
+```{r message=FALSE, warning=FALSE}
+fit<-lm(mpg~wt+qsec,data=mtcars) 
+summary(fit)
+```
+&emsp;&emsp;所有的变量系数检验均为显著。
+</font>
+
+#3 广义线性回归模型
+***
+<font size=4 face="微软雅黑">
+&emsp;&emsp;以上提到的是关于线性模型，接下来将展开介绍下广义的线性回归模型。广义线性的广是指因变量的分布形式比较广，只要是一个指数分布族，线性体现在自然参数$η=θ^Tx$是$θ$的线性函数。
+</font>
+
+##3.1 广义线性模型的构建
+<font size=4 face="微软雅黑">
+&emsp;&emsp;先简单了解一下指数分布族，对于变量$y$，如果其分布可写成$p(y;η)=b(η)exp(η^TT(y)−a(η))$的形式，则称$y$服从一个指数分布族，自然参数$η$是分布的参数。实际中的许多分布都是一个指数分布族，如高斯分布，二项分布，泊松分布，多项分布等等，所以之前写的线性回归、逻辑回归实际上都是个广义线性模型。
+
+&emsp;&emsp;下面以逻辑回归为例。逻辑回归假设$y$服从参数为$ϕ$伯努利分布，$p(y)=ϕ^y(1−ϕ)^{1−y}，E[y]=ϕ$。下面将其写出指数分布族的形式：
+
+$$p(y)=ϕ^y(1−ϕ)^{1−y}\\=exp(log(ϕ^y(1−ϕ)^{1−y})\\=exp(ylog(ϕ)+(1−y)log(1−ϕ))\\=exp(ylog\frac{ϕ}{1−ϕ}+log(1−ϕ))$$
+&emsp;&emsp;与指数分布族的一般形式对比可发现：
+$$b(η)=1\\η=log\frac{ϕ}{1−ϕ}\\T(y)=y\\a(η)=−log(1−ϕ)$$
+
+&emsp;&emsp;因为$$η=θ^Tx,η=log\frac{ϕ}{1−ϕ}$$
+&emsp;&emsp;所以$$ϕ=\frac{1}{1+e^{−η}}=\frac{1}{1+e^{−θ^Tx}}$$
+&emsp;&emsp;期望为
+$$h_θ(x)=E[T(y)]=E[y]=ϕ=\frac{1}{1+e^{−η}}=\frac{1}{1+e^{−θ^Tx}}$$
+
+&emsp;&emsp;这正是逻辑回归的函数形式。
+
+&emsp;&emsp;正是预测值$E[y]$和自然参数$η$之间的作用，得到了逻辑回归方程，这就是连接函数的作用。所以构建一个广义线性模型需要两个步骤，确定预测变量y的分布是一个指数分布族，然后确定连接函数。
+</font>
+
+##3.2 广义线性模型的应用
+<font size=4 face="微软雅黑">
+&emsp;&emsp;逻辑回归和泊松回归是广义线性模型的应用最广泛。逻辑回归因变量是二值的，通常用来做二分类。泊松回归因变量为泊松分布，用来预测一段时间顾客数目的问题。R中用glm()函数来做广义线性模型，并且提供了指数族分布：
+
+&emsp;&emsp;**glm(formula, family=family.generator, data, control = list(...))**
+
+&emsp;&emsp;formula：指拟合函数。
+
+&emsp;&emsp;family：每一种响应分布（指数分布族）允许各种关联函数将均值和线性预测器关联起来。
+
+&emsp;&emsp;常用的family：
+
+&emsp;&emsp;binomal(link='logit')  # 响应变量服从二项分布，连接函数为logit，即logistic回归
+
+&emsp;&emsp;binomal(link='probit')      # 响应变量服从二项分布，连接函数为probit
+
+&emsp;&emsp;poisson(link='identity')    # 响应变量服从泊松分布，即泊松回归
+
+&emsp;&emsp;control:控制算法误差epsilon和最大迭代次数maxit。
+
+&emsp;&emsp;glm.control(epsilon = 1e-8, maxit = 25, trace = FALSE)  
+
+&emsp;&emsp;改变最大迭代次数：control=list(maxit=100)，maxit:算法最大迭代次数。
+
+&emsp;&emsp;以AER包中的Affairs数据集作为例子。该数据集是关于婚姻出轨，其中affairs变量表示出轨次数，数据集中还包括结婚时间、教育、宗教等其它变量。由于affairs为正整数，为了进行Logistic回归先要将其转化为二元变量。
+```{r message=FALSE, warning=FALSE}
+data(Affairs,package = 'AER')
+summary(Affairs)
+Affairs$naffairs[Affairs$affairs==0]=0
+Affairs$naffairs[Affairs$affairs>0]=1
+Affairs$naffairs <- factor(Affairs$naffairs)
+table(Affairs$naffairs)
+```
+&emsp;&emsp;可以看出naffairs这一新列中，出轨的例子有150起，未出轨的例子有451起。
+```{r message=FALSE, warning=FALSE}
+lmodel <- glm(formula=naffairs~gender+age+yearsmarried+children+religiousness+education+occupation+rating,family=binomial(link='logit'),data=Affairs)
+summary(lmodel)
+```
+&emsp;&emsp;通过多元逻辑回归结果看出是否出轨较大程度取决于age，yearsmarried，religiousness和rating这几个变量。
+</font>
+
+# 4 本章汇总
+***
+<font size=4 face="微软雅黑">
+
+| 名称                 | 类别   | 功能              |
+| ------------------ | ---- | --------------- |
+| str()              | 函数   | 查看R数据集结构        |
+| DMwR               | 包    | 处理样本不平衡         |
+| lofactor()         | 函数   | 使用LOF算法计算局部异常因子 |
+| order()            | 函数   | 排序              |
+| car                | 包    | 模型诊断包           |
+| lm()               | 函数   | 线性回归拟合函数        |
+| outlierTest()      | 函数   | 显示离群点           |
+| durbinWatsonTest() | 函数   | 独立性检验           |
+| shapiro.test()     | 函数   | 正态性检验           |
+| residuals()        | 函数   | 计算残差            |
+| density()          | 函数   | 求点密度            |
+| spreadLevelPlot()  | 函数   | 同方差检验           |
+| par()              | 函数   | 将几个图组合在一起       |
+| gvlma()            | 函数   | 线性模型的综合验证       |
+| step()             | 函数   | 逐步回归变量          |
+| drop1()            | 函数   | 删除变量            |
+| data()             | 函数   | 加载R中的内置数据       |
+| glm()              | 函数   | 广义线性回归函数拟合      |
+
+</font>

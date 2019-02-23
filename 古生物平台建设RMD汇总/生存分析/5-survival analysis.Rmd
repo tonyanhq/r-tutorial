@@ -1,0 +1,388 @@
+---
+title: "生存分析"
+output: 
+  html_document: 
+    toc: TRUE
+    toc_float: TRUE
+    code_folding: show
+    fig_width: 7
+    fig_height: 4.5
+    theme: united
+    highlight: tango
+---
+
+#1 基本概念
+***
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;生存分析可以用来估计总体的生存率及其有关指标，如癌症患者治疗后的生存时间资料；还可以对不同处理组生存率进行比较，如比较哪种癌症治疗方法更有效果；同时还可探索生存时间资料的影响因素；预测不同的影响因素水平的个体生存时间和一定时间的生存率。近年来也越来越多人用在互联网数据挖掘中，例如去预测信息在社交网络的传播程度，或者去预测用户流失的概率。
+
+&emsp;&emsp;**1. 生存分析**
+
+&emsp;&emsp;是研究生存现象和响应时间数据及其统计规律的一门学科。将事件的结果（终点事件）和出现这一结果所经历的时间结合起来分析的一种统计分析方法。生存分析与其他多因素分析最大的区别，就是生存分析考虑了观测结果出现的时间长短。
+
+&emsp;&emsp;**2. 事件**
+
+&emsp;&emsp;指研究中规定的生存研究的终点，在研究开始之前就已经制定好。根据研究性质的不同，事件可以是患者的死亡、疾病的复发、仪器的故障，也可以是下岗工人的再就业等等。
+
+&emsp;&emsp;**3. 生存时间**
+
+&emsp;&emsp;指从某一起点到事件发生所经过的时间。生存时间不仅仅指医学中的存活，也可以是机器出故障前的正常运行时间等等。
+
+&emsp;&emsp;终点事件与起始事件之间的时间间隔。 
+
+&emsp;&emsp;终点事件：研究者所关系的特定结局。 
+
+&emsp;&emsp;起始事件：反应研究对象生存过程的起始特征的事件。
+
+&emsp;&emsp;终点事件与起始事件是相对而言的，都是由特定的研究目的所决定的，是整个研究过程的标尺，需要在设计时明确规定，并在研究期间严格遵守，不能随意改变。比如研究药品是否起作用和起作用的时间问题，可以将服药作为起始事件，终点事件设为痊愈。
+
+&emsp;&emsp;**4. 生存时间的类型**
+
+&emsp;&emsp;广义上指某个起点事件开始到某个终点事件发生所经历的时间，度量单位可以是年、月、日、小时等，常用符号t所示。这个时间也未必是通常意义上的时间，也可以是和时间相关的变量。比如距离等，具体要根据研究目的而定义。根据研究对象的结局，生存时间数据可分为两种类型：
+
+&emsp;&emsp;完全数据：从观察起点到发生死亡事件所经历的时间。
+
+&emsp;&emsp;不完全数据：生存时间观察过程的截止不是由于死亡事件，而是由其他原因引起的。不完全数据分为：删失数据，截断数据。
+
+&emsp;&emsp;**不完全主要原因：**
+
+&emsp;&emsp;- 失访：指失去联系；　　
+
+&emsp;&emsp;- 退出：死于非研究因素或非处理因素而退出研究；
+
+&emsp;&emsp;- 终止：设计时规定的时间已到而终止观察，但研究对象仍然存活。
+
+&emsp;&emsp;**删失的表现形式：**
+
+&emsp;&emsp;- 右删失：只知道实际寿命大于某数；
+
+&emsp;&emsp;- 左删失：只知道实际寿命小于某数；
+
+&emsp;&emsp;- 区间删失：只知道实际寿命在一个时间区间内。
+
+&emsp;&emsp;**截尾数据的产生：**
+
+&emsp;&emsp;往往是因为实验设计的要求使得数据天然具有上界或者下界。
+
+&emsp;&emsp;- 左截尾：数据都大于某个值。
+
+&emsp;&emsp;- 右截尾：数据都小于某个值。
+
+&emsp;&emsp;如一个实验研究退休职工的生存情况，那么显然这些数据都是左截尾的，因为所有个体的年龄都大于退休年龄（如t≥60）
+
+&emsp;&emsp;**5. 条件生存概率**
+
+&emsp;&emsp;生存时间的分布一般不呈现正态分布。条件生存概率表示某时段开始存活的个体，到该时段结束时仍存活的可能性。
+
+&emsp;&emsp;**6. 生存率**
+
+&emsp;&emsp;生存概率又称为生存率或生存函数，表示观察对象经历t个单位时间段后仍存活的可能性。
+
+&emsp;&emsp;生存率与条件生存概率不同。条件生存概率是单个时段的结果，而生存率是条件生存概率的累积，是多个时段的累积结果。例如，3年生存率是第1年存活，第2年也存活，第3年还存活的可能性。
+
+&emsp;&emsp;**7. 生存曲线**
+
+&emsp;&emsp;以观察时间为横轴，以生存率为纵轴，将各个时间点所对应的生存率连接在一起的曲线图。
+
+&emsp;&emsp;生存曲线是一条下降的曲线，分析时应注意曲线的高度和斜率。平缓的生存曲线表示高生存率或较长生存期，陡峭的生存曲线表示低生存率或较短生存期。
+
+&emsp;&emsp;**8. 中位生存期**
+
+&emsp;&emsp;又称半数生存期，表示恰好有50％的个体尚存活的时间。中位生存期越长，表示疾病的预后越好。
+
+&emsp;&emsp;**9.生存函数S(t)**
+
+&emsp;&emsp;观察对象的生存时间T大于某时刻t的概率。
+
+$$S(t)=\frac{时刻t的存活例数}{期初观察例数}$$
+
+&emsp;&emsp;**10. 死亡函数F(t) **
+
+&emsp;&emsp;观察对象的生存时间T不大于某时刻t的概率。 
+
+$$F(t)=1-S(t)$$
+
+&emsp;&emsp;**11. 死亡密度函数f(t)**
+
+&emsp;&emsp;观察对象在某时刻t的瞬时死亡率。
+
+$$f(t)=\frac{\nabla{F(t)}}{\nabla{t}}$$
+
+&emsp;&emsp;**12. 风险函数h(t)**
+
+&emsp;&emsp;生存到时刻t的观察对象在时刻t的瞬时死亡率。
+$$h(t)=\frac{f(t)}{S(t)}$$
+
+</font>
+
+#2 生存分析的方法
+***
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;**1.描述法**
+
+&emsp;&emsp;根据样本观测值直接计算每一个时间点或时间区间上的生存函数、死亡函数、风险函数等，并采用列表或绘图的形式显示生存时间的分布规律。方法对数据分布无要求。
+
+
+&emsp;&emsp;**2.非参数法**
+
+&emsp;&emsp;生存时间的分布未知，估计生存函数；或检验危险因素对生存时间的影响。常用乘积极限法和寿命表法，可以用来估计生存函数，比较两组或多组生存分布函数。分析危险因素对生存时间的影响。
+
+
+&emsp;&emsp;**3.参数法**
+
+&emsp;&emsp;根据样本观测值来估计假设分布模型中的参数，获得生存时间的概率分布模型。生存时间经常服从的分布有：指数分布、Weibull分布、对数正态分布、对数Logistic分布、Gamma分布。不仅能处理非参数法解决的问题，同时还可建立生存时间与危险因素之间的关系模型。但是我们必须提前知道生存时间的分布。
+
+
+&emsp;&emsp;**4.半参数法**
+
+&emsp;&emsp;不需要对生存时间的分布做出假定，但是却可以通过一个模型来分析生存时间的分布规律，以及危险因素对生存时间的影响，最著名的就是COX回归。不仅能处理参数法解决的问题，还不需要事先知道生存时间的分布。
+
+#3 R实现
+***
+&emsp;&emsp;R实现生存分析涉及survival包和OIsurv包，同时数据集来自于KMsurv包。
+
+```{r message=FALSE, warning=FALSE}
+# 在第一次导入包之前记得安装相关的包
+library(KMsurv)
+library(survival)
+library(OIsurv)
+# 查看数据集
+data(aids)
+head(aids)
+```
+
+##3.1 生存类型数据
+
+&emsp;&emsp;survival包中的许多函数将方法应用到Surv对象，这些对象是使用Surv()函数创建的生存类型对象。在这里，我们讨论了右删失Surv对象的构造和左截尾右删失Surv对象的构造。
+
+&emsp;&emsp;具体形式：
+
+**Surv(time, event), Surv(time, time2, event, type)**
+
+&emsp;&emsp;**1. 右截尾数据**
+
+&emsp;&emsp;在Surv()函数中仅需要两个参数：一个时间向量和一个表示哪些时间被观察和删失的向量。
+
+
+```{r message=FALSE, warning=FALSE}
+# 查看数据集
+data(tongue)
+head(tongue)
+attach(tongue)
+my.surv.object <- Surv(time[type==1], delta[type==1])
+my.surv.object
+detach(tongue)
+```
+&emsp;&emsp;标识加号是指被右截的观察结果。Surv()中的第一个参数应该输入观察时间和右截尾时间的向量。第二个参数使用指标向量来表示事件是否被观察。
+
+&emsp;&emsp;**2. 左截尾右删失数据**
+
+&emsp;&emsp;第一个参数输入左截时间，第二个参数输入生存事件向量和删失时间，第三个参数输入右删失指示向量。
+
+```{r message=FALSE, warning=FALSE}
+# 查看数据集
+data(psych)
+head(psych)
+attach(psych)
+my.surv.object <- Surv(age, age+time, death)
+my.surv.object
+detach(psych)
+```
+
+##3.2 Kaplan-Meier估计
+
+&emsp;&emsp;生存分析的主要目的是估计生存函数，常用的方法有Kaplan-Meier法。Kaplan-Meier估计是生存函数S(t)的非参数极大似然估计(MLE)。该估计是一个在观测事件时间$t_i$上跳跃的阶跃函数。
+
+&emsp;&emsp;具体形式：
+
+&emsp;&emsp;**survfit(formula, conf.int = 0.95, conf.type = "log")**
+
+```{r message=FALSE, warning=FALSE}
+# 查看数据集
+data(tongue)
+attach(tongue)
+my.surv <- Surv(time[type==1], delta[type==1])
+survfit(my.surv~1)
+```
+
+&emsp;&emsp;Survfit()也有一些可选参数。例如，置信水平使用第二个参数conf.int更改(例如，90%的置信范围，conf.int=0.90)。conf.type参数描述了置信区间的类型。默认的是“log”，它等于对转换函数g(t) =log(t)。“log-log”选项使用g(t)=log(−log(t))。一个线性置信区间是使用参数conf.type="plain"创建的。与R中的许多函数一样，survfit()函数返回可以通过正确的命令访问隐藏信息。下面我们考虑这个隐藏信息的几个元素，它们存储在一个列表中。若需要查看整个信息列表的结构，可对my.fit和summary(my.fit)应用str函数。
+
+```{r message=FALSE, warning=FALSE}
+# 查看数据集
+my.fit <- survfit(my.surv~1)
+summary(my.fit)$surv# 生存函数值
+summary(my.fit)$time
+summary(my.fit)$n.risk
+summary(my.fit)$n.event
+summary(my.fit)$sstd.err
+summary(my.fit)$lower
+str(my.fit)
+str(summary(my.fit))
+```
+
+&emsp;&emsp;Kaplan-Meier估计可以使用plot(my.fit)绘制。
+
+```{r message=FALSE, warning=FALSE}
+plot(my.fit,main="Kaplan-Meier estimate with 95% confidence bounds", xlab = "time",ylab="survival function")
+```
+
+&emsp;&emsp;上面分析不同的组被包含在一个单一的Surv对象中。例如，tongue数据集中的type变量描述了患者的DNA谱。我们可以通过对type变量上的Surv对象进行回归得到这些组的Kaplan-Meier估计:
+
+```{r message=FALSE, warning=FALSE}
+my.fit1 <- survfit( Surv(time, delta) ~ type )
+summary(my.fit1)
+detach(tongue)
+```
+
+##3.3 累计风险函数
+
+&emsp;&emsp;累积风险函数在连续数据上和生存函数的关系如下:
+
+$$S(t)=exp{(-H(t))}$$
+&emsp;&emsp;风险函数的最大似然估计可以通过kaplan-Meier估计的逆变换得到：
+
+$$\hat{H(t)}=-log\hat{S(t)}$$
+
+&emsp;&emsp;尽管survival包中没有函数自动计算任何一个表单，但是通过summary(survfit())返回的对象可以用来计算估计值:
+
+```{r message=FALSE, warning=FALSE}
+data(tongue)
+attach(tongue)
+my.surv <- Surv(time[type==1], delta[type==1])
+my.fit <- summary(survfit(my.surv~1))
+hat.H <- -log(my.fit$surv)
+hat.H
+```
+
+&emsp;&emsp;上面得到的结果即是累积风险函数值。下图是累积风险函数值在时间上的走势。
+
+```{r message=FALSE, warning=FALSE}
+plot(my.fit$time, hat.H, xlab="time", ylab="cumulative hazard value",main="cumulative hazards", type="s")
+```
+
+##3.4 多组生存时间比较
+
+&emsp;&emsp;**survdiff(formula, rho=0)**
+
+&emsp;&emsp;给定两个或两个以上的样本，生存时间是否存在显著差异? 我们可以结合风险函数假设为：
+
+$$H_0:对所有的t有 h_1(t)=h_2(t)=...=h_n(t)\\H_1:h_i(t_0) \neq h_j(t_0)$$
+&emsp;&emsp;函数survdiff()用于这个假设检验。第一个参数是生存对象对一个分类的协变量，通常是一个变量指定哪个组对应哪个生存时间。survdiff()返回的对象提供了有用的信息。
+
+```{r message=FALSE, warning=FALSE}
+data(btrial)
+attach(btrial)
+survdiff(Surv(time, death)~im)
+```
+
+&emsp;&emsp;上面假设检验结果P值等于0.02小于0.05，所以拒绝原假设，两组的样本的生存时间存在显著差异。
+
+&emsp;&emsp;第二个survdiff()参数rho，默认等于0，参数rho用来设置权重，如果给生存曲线的第一部分赋予更大的权重，rho大于0。如果更大权重在生存曲线的后面部分，用小于0的。
+
+##3.5 Cox比例风险模型
+
+&emsp;&emsp;如果考虑其他影响生存时间分布的因素，可以使用Cox回归模型（也叫比例风险模型）它是一种半参数回归模型，利用数学模型拟合生存分布与影响因子之间的关系，评价影响因子对生存函数分布的影响程度。该模型以生存结局和生存时间为应变量，可同时分析众多因素对生存期的影响，能分析带有截尾生存时间的资料，且不要求估计资料的生存分布类型。这里的前提是影响因素的作用不随时间改变，如果不满足这个条件，则应使用含有时间依存协变量的Cox回归模型。
+
+&emsp;&emsp;现在我们考虑时间依存的协变量，如干预措施或可能的环境因素在研究过程中产生变化。为了在R中使用时间相关的协变量，我们大量地应用左截断。例如,如果有一个受干预的病人$i$，然后我们将病人$i$分为两个独立的观察:干预前和干预后。假设患者干预发生在$t_i = 45$时，观察病人$i$在$t_j = 58$时发生的事件。我们将这个病人的病历分成两片段:0到45和45到58。干预的协变量可以在每个时间间隔被赋予不同的值。
+
+&emsp;&emsp;我们考虑以下示例(模拟数据)。病人记录来自一个诊所。在患者清醒后的150天内获得。数据的事件是酗酒，有四个变量。
+
+&emsp;&emsp;* event变量描述被观察的或被删失的复发时间;
+
+&emsp;&emsp;* delta变量描述该事件是被观察(真实)还是被删失(假);
+
+&emsp;&emsp;* gender变量是一个独立于时间的协变量;
+
+&emsp;&emsp;* int是一个依赖时间的协变量表示患者是否进行了干预，有些患者在计划的干预时间前复发，所以里面有NA值。所有干预均发生在患者清醒后。也就是说，只要没有复发，干预协变量随着时间的推移而变化。数据relapse保存在OIsurv包中。
+```{r message=FALSE, warning=FALSE}
+data(relapse)
+head(relapse)
+```
+&emsp;&emsp;这些数据可以通过以下两个步骤进行建模:
+
+&emsp;&emsp;1. 构造生存记录，包括左和右删失的观察。每一个接受干预的病人的生存记录分成两个：干预前和干预后。
+
+&emsp;&emsp;2. 新的生存记录可以通过coxph()函数运行。
+
+&emsp;&emsp;我们首先初始化新的向量来表示生存记录的变量。变量$t_1$和
+$t_2$分别表示开始和结束时间，$d$分别表示观察到复发(TRUE)还是右删失(FALSE)，$g$代表性别，$i$代表病人是否正在经历干预治疗。
+
+```{r message=FALSE, warning=FALSE}
+N <- dim(relapse)[1]
+t1 <- rep(0, N+sum(!is.na(relapse$int)))# 初始化开始时间
+t2 <- rep(-1, length(t1))# 构建结束时间向量
+d <- rep(-1, length(t1))# 时间是否删失
+g <- rep(-1, length(t1))# 性别
+i <- rep(FALSE, length(t1))# 初始化干预为FALSE
+```
+
+&emsp;&emsp;接下来，对每个病人进行检查，看他们是否接受过干预。如果他们没有，那么他们的记录被简单地复制到所使用的新变量中。如果有干预，他们的观察分为两部分:干预前和干预后。
+
+```{r message=FALSE, warning=FALSE}
+j <- 1
+for(ii in 1:dim(relapse)[1]){ 
+  if(is.na(relapse$int[ii])){
+   t2[j] <- relapse$event[ii]
+   d[j] <- relapse$delta[ii]
+   g[j] <- relapse$gender[ii]
+   j <- j+1
+  } else {          # 若发生干预事件，分裂数据
+    g[j+0:1] <- relapse$gender[ii] # 每个时间的性别是一样的
+    d[j] <- 0 # 干预前没有复发
+    d[j+1] <- relapse$delta[ii] # 干预后是否复发
+    i[j+1] <- TRUE # 干预事件发生
+    t2[j] <- relapse$int[ii]-1 # 干预前的结束时间
+    t1[j+1] <- relapse$int[ii]-1 # 干预后的开始时间
+    t2[j+1] <- relapse$event[ii] # 干预后的结束时间
+    j <- j+2 # 两条记录增加
+  }
+}
+
+```
+
+&emsp;&emsp;虽然许多患者有随时间变化的协变量(即干预)，但每一个新的间隔存在不改变的协变量，生存对象就可以建立Cox PH模型。
+
+```{r message=FALSE, warning=FALSE}
+mySurv <- Surv(t1, t2, d)# 构建生存对象
+myCPH <- coxph(mySurv ~ g + i)# cox回归
+test.ph <- cox.zph(myCPH)
+test.ph
+```
+
+&emsp;&emsp;使用R语言survival包中的cox.zph函数进行模型诊断，从上面的结果可以看出，两个变量的P值都大于0.05，说明每个变量均满足PH检验，而模型的整体检验P值0.855，模型整体满足PH检验。
+
+&emsp;&emsp;这个例子是一个简单的例子;只有一个与时间相关的协变量，它每次最多改变一次。在某些情况下，可能有许多随时间变化的协变量。在大多数情况下，可以使用相同的方法。每当一个协变量从一个时间单位变化到下一个时间单位，将间隔分割为两个，根据需要使用左截断和右删失。
+
+</font>
+
+#4 本章汇总
+***
+<font size=4 face="微软雅黑">
+
+| 名称           | 类别   | 功能            |
+| ------------ | ---- | ------------- |
+| KMsurv       | 包    | 生存分析的数据集      |
+| survival     | 包    | 生存分析包         |
+| OIsurv       | 包    | 生存分析包         |
+| data()       | 函数   | 载入R内置数据集      |
+| head()       | 函数   | 查看数据          |
+| attach()     | 函数   | 减少重复键入表名      |
+| detach()     | 函数   | 解除attach函数    |
+| Surv()       | 函数   | 生存对象产生        |
+| survfit()    | 函数   | 生存函数拟合        |
+| survdiff()   | 函数   | 生存时间比较        |
+| dim(relapse) | 函数   | 得到对象的大小       |
+| rep()        | 函数   | 将对象重复多少次产生新对象 |
+| is.na()      | 函数   | 判断是否为空值       |
+| coxph()      | 函数   | cox回归拟合函数     |
+| cox.zph()    | 函数   | cox回归模型检验     |
+
+#5 参考文献
+***
+[1] 彭非. 生存分析[M]. 中国人民大学出版社, 2004.
+
+[2] http://www.openintro.org/stat/down/Survival-Analysis-in-R.pdf
+
+</font>

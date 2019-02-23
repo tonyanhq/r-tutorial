@@ -1,0 +1,90 @@
+---
+title: "数据描述性分析-多元数据的数据特征与相关分析"
+output: 
+  html_document:
+    number_sections: TRUE
+    toc: TRUE
+    toc_float: TRUE
+    code_folding: show
+    fig_width: 7
+    fig_height: 5
+    theme: united
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;之前我们的样本数据基本上是来自一元总体,而在实际情况中，许多数据来自多元数据的总体。那么对于多元总体的数据，除了分析各个分量的取值特点外，更重要的是分析各个分量之间的相关关系，这就是多元数据的相关分析。
+
+</font>
+
+#二元数据的数字特征及相关系数
+<font size=4 face="微软雅黑">
+
+***
+&emsp;&emsp;设$(X,Y)'$是二元总体，从中取得观测样本$(x_1,y_1)',(x_2,y_2)',...(x_n,y_n)'$,为了直观表示，我们写出观测矩阵：
+$$\begin{bmatrix}x_1&x_2&...&x_n\\y_1&y_2&...&y_n\end{bmatrix}$$
+&emsp;&emsp;记$$\bar{x}=\frac{1}{n}\sum\limits_{i=1}^nx_i$$
+$$ \bar{y}=\frac{1}{n}\sum\limits_{i=1}^ny_i$$
+&emsp;&emsp;称$(\bar x,\bar y)'$为二元观测样本的均值向量。
+
+&emsp;&emsp;记变量$X$的观测样本的方差为$s_{xx}$
+$$s_{xx}=\frac{1}{n-1}\sum\limits_{i=1}^n(x_i-\bar{x})^2$$
+
+&emsp;&emsp;记变量$Y$的观测样本的方差为$s_{yy}$
+$$s_{yy}=\frac{1}{n-1}\sum\limits_{i=1}^n(y_i-\bar{y})^2$$
+
+&emsp;&emsp;记变量$X$与$Y$的观测样本的协方差为$s_{xy}$
+$$s_{xy}=\frac{1}{n-1}\sum\limits_{i=1}^n(x_i-\bar{x})(y_i-\bar{y})$$
+
+&emsp;&emsp;则观测样本的协方差矩阵为$$S=\begin{bmatrix}s_{xx}&s_{xy}\\s_{xy}&s_{yy}\end{bmatrix}$$
+&emsp;&emsp;观测样本的相关系数为$$r=\frac{s_{xy}}{\sqrt{s_{xx}}\sqrt{s_{yy}}}$$
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;在R语言中，用`cov()`函数计算协方差阵，用`cor()`函数计算相关矩阵。例如
+<font size=4 face="微软雅黑">
+
+```{r message=FALSE, warning=FALSE}
+
+data<-data.frame(
+      a=c(67,54,72,64,38,22,58,43,46,34),
+      b=c(24,14,23,15,16,18,29,20,16,17)
+)#采用数据框的结构输入数据
+data.s<-cov(data) # 求样本数据的协方差阵
+data.r<-cor(data) # 求样本数据的相关矩阵
+data.s
+data.r
+```
+
+#多元数据的数字特征及相关系数
+<font size=4 face="微软雅黑">
+
+***
+&emsp;&emsp;设$(X_1，X_2，...X_p)'$是$p$元总体，从中取得观测样本$$(x_{11},x_{12},...x_{1p})',(x_{21},x_{22},...x_{2p})',...(x_{n1},x_{n2},...x_{np})'$$&emsp;&emsp;样本的第j个分量的均值为$$\bar{x_j}=\frac{1}{n}\sum\limits_{i=1}^nx_{ij}$$&emsp;&emsp;样本的第j个分量的方差为$$s_j^2=\frac{1}{n-1}\sum\limits_{i=1}^n(x_{ij}-\bar{x_j})^2$$&emsp;&emsp;样本的第j个分量与第k个分量的协方差为$$s_{jk}=\frac{1}{n-1}\sum\limits_{i=1}^n(x_{ij}-\bar{x_j})(x_{ik}-\bar{x_k})$$则样本的第j个分量与第k个分量的相关系数为$$r_{jk}=\frac{s_{jk}}{\sqrt{s_{jj}}\sqrt{s_{kk}}}$$
+&emsp;&emsp;称$$R=
+\left[
+\begin{matrix}
+ r_{11}      & r_{12}      & \cdots & r_{1p}      \\
+ r_{21}      & r_{22]}      & \cdots & r_{2p}      \\
+ \vdots & \vdots & \ddots & \vdots \\
+ r_{p1}      & r_{p2}      & \cdots & r_{pp}      \\
+\end{matrix}
+\right]
+$$
+
+为样本的相关阵，协方差阵可以类似写出。
+
+&emsp;&emsp;在R语言中，仍用`cov()`函数和`cor()`函数计算样本的协方差阵与相关矩阵，所以，在此不再赘述。
+<font size=4 face="微软雅黑">
+
+#参考文献
+<font size=4 face="微软雅黑">
+
+***
+[1]薛毅. 统计建模与R软件[M]. 清华大学出版社, 2007.
+<font size=4 face="微软雅黑">
+

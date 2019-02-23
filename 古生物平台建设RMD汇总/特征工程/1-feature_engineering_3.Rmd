@@ -1,0 +1,157 @@
+---
+title: "特征工程(三)"
+output: 
+  html_document:
+    number_sections: TRUE
+    toc: TRUE
+    toc_float: TRUE
+    code_folding: show
+    fig_width: 7
+    fig_height: 4.5
+    theme: united
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+# 特征选择
+<font size=4 face="微软雅黑">
+
+***
+&emsp;&emsp;一般而言，我们面对的数据集都会拥有很多特征，那么就可能存在有些特征对后续的分析挖掘是没有用处的，因而我们需要将其识别并剔除，这个过程就是特征选择。周志华老师的《机器学习》上面给出的特征选择的定义是：从给定的特征集合中选择出相关特征子集的过程。
+
+&emsp;&emsp;特征选择不仅可以降低维灾难问题，而且可以降低模型的过拟合问题，从而可以在一定程度上提升模型的精确度、降低建立模型的时间。
+
+目前有两种常用的特征选择的方法：**封装法、过滤法**
+
+</font>
+
+
+## 封装法
+<font size=4 face="微软雅黑">
+
+**封装法：**特征选择的过程依赖于模型的训练，以模型的预测能力作为特征选择的评价准则。简单的说，封装法选择恶特征就是适用于该算法的最好的特征。该方法所筛选的变量具有高质量性，但是运行速度会比较慢。
+
+在R中我们可以使用 caret 包中的**rfe()**函数结合**rfeControl()**函数进行封装法的特征选择。
+
+**rfeControl()**函数用来设置**rfe()**函数的控制参数，该函数中几个重要的参数如下：
+
+* **functions：**指定模型拟合、预测和特征选择的函数。可以是lmFuncs、rfFuncs、treebagFuncs、nbFuncs等。
+* **rerank：**布尔类型参数，在每次特征删除的过程中是否重新计算特征的重要性，默认为False。
+* **method：**指定抽样的方法，可以是boot、cv、LOOCV和LGOCV。
+* **saveDetails：**是否保存特征选择过程中的预测值和变量重要性，默认为FALSE。
+* **number：**指定折数或者重抽样迭代次数,当method为cv或repeatedcv时，则默认从总体中抽取10份样本并迭代10次，否则抽取25份并迭代25次。
+* **repeats：**指定抽样组数，默认抽取一组样本。
+* **verbose：**是否返回每次重抽样的详细信息，默认为FALSE。
+* **returnResamp：**返回重抽样的汇总信息。
+* **p：**如果指定method为LGOCV时，该参数起作用，指定训练集的比重。
+* **seeds：**为抽样设置随机种子。
+* **allowParallel：**在并行后台已加载和允许的情况下，是否允许并行运算。
+
+**rfe()**函数用来进行特征帅选，该函数主要使用以下几个参数：
+
+* **x：**指定输入变量。
+* **y：**指定输出变量。
+* **sizes：**通过一个整数向量，指定需要保留的特征数量。
+* **metric：**指定衡量最优模型的判断指标，默认使用RMSE和Rsquared衡量回归模型，使用Accuracy和Kappa系数衡量分类模型。
+* **maximize：**布尔类型参数，如果metric为RMSE,则不要求metric最小化，否则要求Kappa系数、判决系数最大化和精确度达到最大化。
+* **rfeControl：**指定rfe函数的控制参数。
+
+下面我们针对鸢尾花数据集使用封装法进行变量的筛选：
+
+</font>
+
+
+```{r}
+
+# install.packages("caret")
+library(caret)
+
+## 设置rfe的控制参数
+rfeControls.rf <- rfeControl(
+  functions = rfFuncs,                     # 使用随机森林算法
+  method = 'cv',                           # 使用交叉验证的抽样方法
+  number = 3)                              # 指定3折交叉验证
+
+## 使用rfe函数进行特征选择
+rfe.rf <- rfe(x = iris[, -5],              # 指定输入变量
+              y = iris[, 5],               # 指定输出变量
+              sizes = seq(1, 4, 1),        # 指定保留特征的数量
+              rfeControl = rfeControls.rf) # 指定控制参数
+
+rfe.rf                                     # 展示筛选结果
+
+```
+
+<font size=4 face="微软雅黑">
+
+通过上面封装法输出的特征筛选结果，可以看出最终选取了Petal.Width、Petal.Length两个变量作为自变量。
+
+</font>
+
+## 过滤法
+<font size=4 face="微软雅黑">
+
+**过滤法：**与上述讲解的封装法最大的不同之处就是其特征选择过程与模型的建立无关，而是通过分析变量内部的关系进行特征的筛选。该方法在运行速度上会相对快一些，但是很可能会剔除比较重要的变量，从而导致数据信息的丢失。
+
+在R中我们可以使用 caret 包中的**sbf()**函数结合**sbfControl()**函数进行封装法的特征选择。
+
+**sbfControl()**函数用来设置**sbf()**函数的控制参数，该函数中几个重要的参数如下：
+
+* **functions：**指定模型拟合、预测和特征选择的函数。可以是lmSBF、rfSBF、treebagSBF、nbSBF等。
+* **method：**指定抽样的方法，可以是boot、cv、LOOCV和LGOCV。
+* **saveDetails：**是否保存特征选择过程中的预测值和变量重要性，默认为FALSE。
+* **number：**指定折数或者重抽样迭代次数,当method为cv或repeatedcv时，则默认从总体中抽取10份样本并迭代10次，否则抽取25份并迭代25次。
+* **repeats：**指定抽样组数，默认抽取一组样本。
+* **verbose：**是否返回每次重抽样的详细信息，默认为FALSE。
+* **returnResamp：**返回重抽样的汇总信息。
+* **p：**如果指定method为LGOCV时，该参数起作用，指定训练集的比重。
+* **seeds：**为抽样设置随机种子。
+* **allowParallel：**在并行后台已加载和允许的情况下，是否允许并行运算。
+
+**sbf()**函数用来进行特征帅选，该函数主要使用以下几个参数：
+
+* **x：**指定输入变量。
+* **y：**指定输出变量。
+* **sbfControl：**指定sbf函数的控制参数。
+
+下面我们针对鸢尾花数据集使用过滤法进行变量的筛选：
+
+</font>
+
+```{r}
+
+## 构建sbf函数的控制参数
+sbfControls.rf <- sbfControl(
+  functions = rfSBF,                       # 使用随机森林算法
+  method = 'cv',                           # 使用交叉验证的抽样方法
+  number = 3)                              # 指定3折交叉验证
+
+#使用sbf函数进行特征选择
+sbf.rf <- sbf(x = iris[, -5],              # 指定输入变量
+              y = iris[, 5],               # 指定输出变量
+              sizes = seq(1, 4, 1),        # 指定保留特征的数量
+              sbfControl = sbfControls.rf) # 指定控制参数
+
+sbf.rf                                     # 展示筛选结果
+
+```
+
+<font size=4 face="微软雅黑">
+
+通过上面过滤法输出的特征筛选结果，可以看出最终选择了所有的自变量作为自变量。
+
+**值得注意的是，特征选择是经常用到的，上面我们也只是举了两个简单的例子去帮助大家入门。实际应用中还得需要多次的调参才可能选取出最佳的特征。**
+
+</font>
+
+
+# 参考文献
+<font size=4 face="微软雅黑">
+
+[1] 卡巴科弗. R语言实战[M]. 人民邮电出版社, 2013.<br>
+[2] 周志华. 机器学习 : = Machine learning[M]. 清华大学出版社, 2016.
+
+</font>

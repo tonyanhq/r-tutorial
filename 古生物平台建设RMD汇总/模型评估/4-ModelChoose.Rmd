@@ -1,0 +1,227 @@
+---
+title: "模型评估与选择"
+output: 
+  html_document:
+    number_sections: TRUE
+    toc: TRUE
+    toc_float: TRUE
+    code_folding: show
+    fig_width: 7
+    fig_height: 4.5
+    theme: united
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+<font size=4 face="微软雅黑">
+&emsp;&emsp;在前面的章节中我们已经了解了一系列的模型构建过程，而在这一系列模型中，大部分都是通过描述和拟合来进行预测的。所以我们在评估一个模型的时候，通常考虑的重点也即为模型的预测能力。
+
+&emsp;&emsp;通常，我们需要对多个模型进行评估，从而从众多的模型中最终确定出一个最优的模型。而在模型评估这一过程中，必须弄清楚我们利用模型进行样本预测时所想要得到的结果是什么，这样做的同时也有助于我们清晰地认识在模型构建的过程中，被放入模型中的变量是否合适和必要。在利用软件进行评估之前，重要的一步就是模型构建者自身对统计模型的重新审视。
+
+&emsp;&emsp;模型评估：先算测试集误差接着用统计检验方法检验误差（泛化能力）到底成不成立。
+
+# 评估过程概述
+***
+## 混淆矩阵
+<font size=4 face="微软雅黑">
+&emsp;&emsp;我们通常会从模型的混淆矩阵来测评模型的预测能力。模型的混淆矩阵主要是讨论模型的预测结果同真实结果之间的差距。从模型的混淆矩阵可以得到4个引申的概念，分别为：正确的肯定结果、错误的肯定结果、正确的否定结果和错误的否定结果。
+
+## 风险图
+&emsp;&emsp;根据模型的混淆矩阵以及以上4个概念，我们将绘制出模型的风险图。风险图主要是利用图像的形式来对模型的预测结果与真实值之间的差别进行比较分析。
+
+
+## ROC图像
+&emsp;&emsp;除了模型风险图之外，我们还能给绘制出模型的ROC图像进行模型评估。
+
+
+## 得分数据集
+&emsp;&emsp;在模型评估的最后，我们将能够得到一个关于模型的简单得分数据集。
+
+
+&emsp;&emsp;以上介绍的是本章模型评估的大致过程，每一步骤的具体实现及意义将在后面部分一一说明。
+
+
+# 安装Rattle包
+***
+<font size=4 face="微软雅黑">
+&emsp;&emsp;Rattle是R中一个用于数据挖掘的图形交互界面（GUI），可以快捷处理常见的数据挖掘问题。从数据的整理到模型的评价，Rattle给出了完整的解决方案。Rattle和R平台良好的交互性，又为用户使用R语言解决复杂问题开启了方便之门。Rattle易学易用，不要求很多的R语言基础，被广泛的应用于数据挖掘实践和教学之中，在澳大利亚，有至少15个政府部门采用Rattle作为标准的数据挖掘工具（http://en.wikipedia.org/wiki/Rattle_GUI） 。
+
+&emsp;&emsp;在R中，Rattle使用RGtk2 包提供的Gnome图形用户界面，可以在WINDOWS，
+MAC OS/X，Linux等多个系统中使用。
+  
+&emsp;&emsp;图形界面GUI由Glade 交互界面生成器开发，这会产生一个于编程语言无关的XML描述来用来生成用户交互界面的窗口部件。
+
+&emsp;&emsp;Glade允许开发者自由的选择特定的编程语言来实现功能，对Rattle来说，这个语言就是R。最早的Rattle事实上是使用Python来实现回调（callbacks）
+使用rpy调用R完成统计工作。RGtk2包的出现，使得Rattle的界面实现完全由R来写成，这样Rattle才完全成为了一种基于R的应用。
+  
+&emsp;&emsp;Rattle基于大量的R包：RGtk2, pmml, colorspace, ada, amap, arules, biclust, cba, descr, doBy, e1071, ellipse, fEcofin, fBasics, foreign, fpc, gdata, gtools, gplots, gWidgetsRGtk2, Hmisc, kernlab, latticist, Matrix, mice, network, nnet, odfWeave, party, playwith, psych, randomForest, reshape, RGtk2Extras, ROCR, RODBC, rpart, RSvgDevice, survival, timeDate, graph, RBGL, bitops等等。借助于这些包，Rattle可以实现特殊的统计计算，图形设备，输入输出等等功能。这些R包会在Rattle的安装和使用过程中会不断地安装在你的R 当中。
+
+&emsp;&emsp;Rattle不仅仅是一个所见所得GUI工具，它还有很多扩展功能。pmml包是在Rattle基础上发展起来的一个R包，它使用基于PMML的开放标准XML ，或预测模型标记语言。按这种方式由R导出的模型可以输入类似于由云计算机驱动的ADAPA决策引擎的工具，从而可以在多个平台上运行。
+
+&emsp;&emsp;首先需要安装R，然后要保证Gnome 和Glade已经安装在电脑上。Rattle的资源代码由http://rattle.googlecode.com 提供，与安装R包同样的方式进行安装。在R控制台，键入：
+```{r} 
+## install.packages("RGtk2")   # 安装RGTtk2软件包
+## install.packages("rattle", dependencies = TRUE)  # 安装rattle程序包
+```
+
+&emsp;&emsp;运行成功后，即完成了程序包的安装，程序可以正常使用。接下来我们载入这个包：
+```{r}
+library(rattle)    # 加载rattle程序包
+rattle()           # 调用rattle程序包
+```
+
+&emsp;&emsp;在完成如上步骤之后，即可得到如下图所示的Rattle程序包的初始界面。
+
+<div align=center>
+![](E:/PKU_R/rattle1.png)
+</div>
+
+# Rattle功能简介
+***
+## Rattle的标签栏
+
+&emsp;&emsp;一个完整的数据挖掘过程包括以下几个步骤(CRISP-DM,1996)  
+&emsp;&emsp;(1)	理解问题  
+&emsp;&emsp;(2)	理解数据  
+&emsp;&emsp;(3)	准备数据  
+&emsp;&emsp;(4)	建立模型  
+&emsp;&emsp;(5)	模型评估  
+&emsp;&emsp;(6)	运用  
+
+&emsp;&emsp;基于这个流程,Rattle开发了一个方便的标签栏，可以便捷的完成操作。这个标签栏从左到右依次排列，各自完成数据挖掘的一个相关步骤。
+
+### Data：选择数据源，输入数据
+&emsp;&emsp;选项Data主要用于模型数据的选取，确定模型数据的来源。通常有来自于表格的数据（Spreadsheet）、来源于数据库的数据（ODBC）、来源于R语言的数据集（R Dataset）等。
+
+&emsp;&emsp;界面中，第三行中的参数Partition用于数据的划分。为方便建模与分析，通常会把原始数据集划分为3个部分，分别为Training、Validation和Testing，系统默认设置比例为70:15:15，并按照比例从数据集中随机抽取样本。使用过程中，Training数据集主要用于模型的建立，Validation数据集主要用于模型评估，Testing数据集主要用于模型测试。
+
+&emsp;&emsp;在确定数据来源于划分之后，系统将会列出数据集的各个变量以及变量的数据类型。在数据对话窗口中，我们可以选择变量在构建模型时的具体作用。
+
+### Explore：数据探索
+&emsp;&emsp;Explore主要用于数据探究，理解数据分布，该界面主要能根据数据集输出关于数据集的以下信息：
+
+<div align=center>
+![](E:/PKU_R/rattle3.png)
+</div>
+
+&emsp;&emsp;数据总体概况（Summary）、数据分布情况（Distribution）、数据的相关系数矩阵（Correlation）、数据集的主成分分析（Principal Components）以及各变量之间的交互作用（Interaction）。
+
+### Test：提供各种统计检验
+&emsp;&emsp;Test选项主要用于数据集的相关检验，主要统计检验有：KS检验（Kolmogorov-Smirnov）、威尔科特斯检验（Wilcoxon Rank-Sum）、T检验（T-test）和F检验（F-test）。
+
+<div align=center>
+![](E:/PKU_R/rattle4.png)
+</div>
+
+### Transform：变换数据形式
+&emsp;&emsp;Transform选项主要用于数据集的预处理，界面对于数据的转换有4种转换类型，分别为：数据标准化（Rescale）、数据插值（Impute）、数据重排列（Recode）和数据清理（Cleanup）。我们可以看到，在数据转换类型Type的下面一行中，显示出了在数据标准化中将要使用到的标准化方式。
+
+<div align=center>
+![](E:/PKU_R/rattle5.png)
+</div>
+
+### Cluster：数据聚类
+&emsp;&emsp;Cluster选项中的主要功能是对数据集进行聚类，主要包括4种数据的聚类方式，分别为K-均值聚类法（KMeans）、自适应的软子空间聚类算法（Ewkm）、层次聚类法（Hierarchical）和双聚类算法（biclustering）。从下图可以发现，在聚类方法Type下的一行主要用于决定聚类分析的相关系数，例如类别数量以及随机生成器初始值等。
+
+<div align=center>
+![](E:/PKU_R/rattle6.png)
+</div>
+
+### Associate：关联规则方法
+&emsp;&emsp;Associate选项中主要是对关联规则方法进行控制，具体内容如下图。
+<div align=center>
+![](E:/PKU_R/rattle7.png)
+</div>
+
+### Model:模型评估
+&emsp;&emsp;Model选项是内容最丰富的一个标签，其中包括多种方法：决策树，支持向量机，线性模型，神经网络，随机森林，提升（Boost）等等。在确定了模型的预测类别之后，界面下方会出现与模型相关的参数，系统在建立出模型之后会在对话框中弹出模型的相关信息。
+<div align=center>
+![](E:/PKU_R/rattle2.png)
+</div>
+### Evaluate:模型评估
+&emsp;&emsp;Evaluate选项主要用于模型评估，也是本章的总要内容，它会提供一个实际结果和预测结果进行比较的误差矩阵。这里提供了一系列模型评估标准，其中有模型混淆矩阵（Error Matrix）、模型风险表（Risk）、模型ROC图像（ROC）以及模型得分数据集（Score）等各类模型评估指标。
+
+<div align=center>
+![](E:/PKU_R/rattle8.png)
+</div>
+
+### Log：数据挖掘过程的纪录
+&emsp;&emsp;Log选项可以给出所进行的Rattle操作的R代码，利用这个标签，可以学习R的数据挖掘过程，也可以把纪录以文本形式输出，在R 平台中实现R和Rattle的交互。
+
+## Rattle的工具栏和菜单
+&emsp;&emsp;Rattle工具栏上最主要的一个按钮是Execute按钮（执行）。所有的操作都要点击Execute来完成（对应的快捷键是F2）。
+
+&emsp;&emsp;Report按钮可以完成当前操作的格式化报告（以开放的标准ODT格式）。
+
+&emsp;&emsp;Export按钮，可以输出来自Rattle的各种对象，特别的，完成Moel标签的相关操作后，它会以PMML格式保存当前模型。
+
+&emsp;&emsp;Rattle工具栏和标签栏完成的大部分工作，使用菜单也可以完成。菜单很平凡，特别要指出的一点是，setting菜单中的Use Cario Graphics Device这一项要选中，这样图形才会以Rattle图形设备的形式输出，否则，会作为R图形输出。
+
+# 模型评估的相关概念
+
+## 误判率
+&emsp;&emsp;用于评估模型性能的最简便的方法是分析模型的误判率。误判率的计算方式是根据模型预测结果同真实值之间的差别而计算得出，可以通过用误判的样本个数初一样本总数得到模型误判率。
+
+## 正确/错误的肯定判断、正确/错误的否定判断
+&emsp;&emsp;这4个概念来源于模型的混淆矩阵，但这4个概念的具体应用不仅限于模型的混淆矩阵。  
+&emsp;&emsp;例如，在天气预测模型中，如果模型预测为“下雨”且第二天确实下雨了，那么这是一个正确的肯定判断；同理，如果模型预测同第二天的真实情况都为“不下雨”，那么这是一个正确的否定判断；如果模型预测为“下雨”，而第二天没有下雨，那么这是一个错误的肯定判断；如果模型预测为“不下雨”，而第二天下雨了，那么这是一个错误的否定判断。  
+&emsp;&emsp;从误判率来看，并不需要这样细致的划分，但是从实际情况来看，这样做有着重要的意义。  
+&emsp;&emsp;例如，在天气预测模型中，模型发生“错误肯定判断”和“错误否定判断”对人们的损失是不同的。“错误肯定判断”带来的结果是带了雨伞却没有下雨，是比较小的损失，但是“错误否定判断”带来的结果是衣服会弄湿，这会带来较大的损失。  
+&emsp;&emsp;具体是错误的肯定判断影响大，还是错误的否定判断影响大，主要取决于模型的具体应用情景。但是通常情况下，我们会比较关注正确的肯定判断和错误的肯定判断。
+
+
+## 精确度、敏感度和特异性
+&emsp;&emsp;模型的精确度是指正确的肯定判断和全部肯定判断的比值，模型的精确度主要是用于测评模型针对肯定的预测结果的准确度。  
+&emsp;&emsp;模型的敏感度是指模型正确的肯定判断与真实的肯定结果的比率，模型的敏感度主要用于测评模型具体能够鉴别出实际样本的肯定结果中有多少个真实结果。  
+&emsp;&emsp;模型的特异性主要是用于测评模型具体能够鉴别出实际样本的否定结果中有多少个否定结果，该值刚好与模型的敏感度测评的范围相异。
+
+# Rattle在模型评估的应用
+## 混淆矩阵
+&emsp;&emsp;在Rattle程序包中，Evaluate的默认评估选项即为混淆矩阵。该矩阵主要用于比较模型预测值同实际真实值之间的差别。通过混淆矩阵我们能够很清晰地观察到模型中的正确肯定判断、错误肯定判断、正确否定判断和错误肯定判断的具体情况，这有利于我们根据实际需求去调整相应的模型。  
+
+<div align=center>
+![](E:/PKU_R/rattle9.png)
+</div>
+
+&emsp;&emsp;其中第一个矩阵点的是样本的个数，另一个矩阵表示该样本占总样本的比率。我们可以得到以下3个方面的信息：
+1、进行混淆矩阵分析的模型为决策树模型
+2、进行混淆矩阵分析的数据来自于原始数据的Validation数据集
+3、模型总计误判率为18.5%，其中错误的肯定预测5个，占样本总数的9.3%，错误的否定预测5个，占样本总数的9.3%
+
+&emsp;&emsp;我们发现，预测准确性较低，可以对模型进行相应调整，例如建立模型时为模型赋予一个权重值，加大肯定结果的权重。
+
+## 风险图
+&emsp;&emsp;模型风险图通常被称为累计增益图，主要提供二分类模型评估中的另一种透视图，该图像可以通过Evaluate界面中的Risk选项直接生成而得到。理解风险图时，要首先找到问题的核心，并且找到模型的特定环境。
+
+<div align=center>
+![](E:/PKU_R/rattle10.png)
+</div>
+
+&emsp;&emsp;上图基准线上方的实线代表根据模型对数据重新排列后，得到的新模型还能具有原模型多少性能的百分比。图中的19%代表的是strike rate。
+
+&emsp;&emsp;对于任意一个二分类变量的模型，只要是通过Rattle程序包创建的，就能利用模型的风险图进行分析和评估。在比较不同模型的风险图时，需要寻找图形下方面积较大的模型，即靠近图像左上角的图形所代表的模型能通常优于靠近基准线的模型。
+
+## ROC图及相关图表
+&emsp;&emsp;模型的ROC图也是一种常见的数据挖掘模型评估图，此外，还有与ROC图像相关的图像，如精确度与敏感度图像、敏感度与特异性图、增益图，但是ROC图像使用最为广泛。
+
+&emsp;&emsp;ROC图像与风险图相似，但是坐标轴不同。这里需要注意，Rattle程序包只是借助于ROCR程序包绘制的ROC图像，本身不具有绘制ROC图像的功能。
+
+&emsp;&emsp;ROC图像绘制的为正确肯定判断率与错误肯定判断率之间的关系图
+
+<div align=center>
+![](E:/PKU_R/rattle11.png)
+</div>
+
+## 模型得分数据集
+&emsp;&emsp;在Evaluate界面中，程序包还提供了一个得分数据集的按钮。
+
+&emsp;&emsp;在程序包中，该按钮的主要作用是可以将模型分析结果保存为文件的形式，以便我们在其他软件中进行更多的分析活动，结果会以csv格式进行保存。
+
+# 参考文献
+***
+[1] Graham J Williams，Rattle: A Data Mining GUI for R，The R Journal Vol. 1/2, December 2009.  
+[2] Graham J Williams, Data Mining with Rattle and R, Springer Verlag,2011.  
+[3] 黄文, 王正林. 数据挖掘 : R语言实战[M]. 电子工业出版社, 2014.  

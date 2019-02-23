@@ -1,0 +1,397 @@
+---
+title: "方差分析"
+output: 
+  html_document: 
+    toc: TRUE
+    toc_float: TRUE
+    code_folding: show
+    fig_width: 7
+    fig_height: 4.5
+    theme: united
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#1 方差分析基本原理
+***
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;当两个均值进行比较的时候我们采用t检验。但多个均值比较不适合采用t检验作两两比较，而应该采用方差分析。方差分析是一种常见的统计模型，用于检验样本间均值是否相等。
+
+</font>
+
+##1.1 几个定义
+
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;* 我们对结果是否有影响的可控制的条件称为因素；
+
+&emsp;&emsp;* 考察一个因素的影响时，把该因素的值严格控制在几个不同的状态等级，每个等级称为一个水平。
+
+</font>
+
+##1.2 方差分析的前提要求
+
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;假设各水平的数据是来自正态分布总体的随机样本，各水平的样本相互独立方差相等。
+
+</font>
+
+##1.3 方差分析的基本原理
+
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;认为不同处理组的均数间的差别基本来源有两个：
+
+&emsp;&emsp;(1) 实验条件，即不同的处理造成的差异，称为组间差异。用变量在各组的均值与总均值之偏差平方和的总和表示，记作SSA，组间自由度dfa。
+
+&emsp;&emsp;(2) 随机误差，如测量误差造成的差异或个体间的差异，称为组内差异，用变量在各组的均值与该组内变量值之偏差平方和的总和表示， 记作SSE，组内自由度dfe。
+
+&emsp;&emsp;总偏差平方和 SST = SSA + SSE。
+
+&emsp;&emsp;组内SSE、组间SSA除以各自的自由度(组内dfe =n-r，组间dfa=r-1，其中n为样本总数，r为组数)，得到其均方MSA和MSE，一种情况是处理没有作用，即各组样本均来自同一总体，MSA/MSE约等于1。另一种情况是处理确实有作用，组间均方是由于误差与不同处理共同导致的结果，即各样本来自不同总体。那么，MSA>MSE。考虑MSA>MSE是否是显著的，用MSA/MSE比值构成F统计量。用F值与其临界值比较，推断各样本是否来自相同的总体。
+
+| 方差来源 | 离差平方和SS | 自由度df | 均方MS |   F值    |
+| :--: | :-----: | :---: | :--: | :-----: |
+|  组间  |   SSA   |  r-1  | MSA  | MSA/MSE |
+|  组内  |   SSE   |  n-r  | MSE  |    —    |
+| 总差异  |   SST   |  n-1  |  —   |    —    |
+
+</font>
+
+##1.4 方差分析原假设
+
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;例如：检验饮料的四种包装在销售量上是否有显著差异，即四种包装的平均销售量是否全相等。
+$$
+H_0:\mu_1=\mu_2=\mu_3=\mu_4 \\
+H_1:\mu_1、\mu_2、\mu_3和\mu_4 不全相等
+$$
+&emsp;&emsp;注意这里的说法，原假设任意一个等号不成立都会拒绝原假设。
+
+</font>
+
+#2 单因素方差分析
+***
+##2.1 假设条件的检验
+
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;前面提到假设各水平的数据是来自正态分布总体的随机样本，各水平的样本相互独立方差相等；那么我们需要检验假设条件是否成立。
+
+1. 正态性检验
+
+&emsp;&emsp;用W检验`shapiro.test()`函数方法对数据作正态性检验。
+
+```{r message=FALSE, warning=FALSE}
+# 用data frame的格式输入数据
+medicine <- data.frame(
+  Response=c(30,38,35,41,27,24,32,26,31,29,27,35,21,25,17,21,20,19),
+  Treatment=factor(c(rep("a",6),rep("b",8),rep("c",4)))
+)
+
+table(medicine) # 数据展示，注意table对数据的表示方式。
+
+```
+
+```{r message=FALSE, warning=FALSE}
+# 在R语言中，对于串列，数据框中的数据的进行操作时，为了避免重复地键入对象名称，可使用attach。
+attach(medicine)
+
+shapiro.test(Response[Treatment=="a"])
+
+shapiro.test(Response[Treatment=="b"])
+
+shapiro.test(Response[Treatment=="c"])
+
+```
+
+&emsp;&emsp;从上面运行结果可以看出每组数据的正态性检验结果的P值都大于0.05，原假设为该数据服从正态分布，所以不能拒绝原假设，这三组数据都服从正态分布。
+&emsp;&emsp;或者也可以假设因变量Response服从正态分布，各组方差相等。可用Q-Q图来检验正态性假设。注意qqPlot需要`lm()`拟合。
+
+```{r message=FALSE, warning=FALSE}
+library(car)
+qqPlot(lm(Response ~ Treatment, data = medicine), simulate = TRUE, 
+       main = "QQ Plot", labels = FALSE)
+```
+
+2. 方差齐性检验
+
+&emsp;&emsp;方差的齐次性检验就是检验数据在不同的水平下方差是否相同，常用方法是Bartlett检验。
+
+```{r message=FALSE, warning=FALSE}
+bartlett.test(Response~Treatment,data=medicine)
+
+```
+
+&emsp;&emsp;p值0.1078>0.05，不能拒绝原假设，可以认为各组的数据是等方差的。
+
+</font>
+
+##2.2 方差分析
+
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;假设条件检验后，接下来进行方差分析，只考察一个因素的方差分析称为单因素方差分析。
+
+```{r message=FALSE, warning=FALSE}
+a.aov <- aov(Response~Treatment,data = medicine)# 方差分析
+summary(a.aov)# 查看单因素方差分析结果
+print(model.tables(a.aov,"means"),digits=3)# 各水平均值
+
+```
+&emsp;&emsp;结果的P值小于0.05，拒绝原假设，各水平的均值并不完全相等。
+
+</font>
+
+##2.3 多重比较
+
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;当方差分析拒绝H0时，认为各水平均值不全相等。多重比较是通过对各均值之间的配对比较来进一步检验到底哪几组水平之间的均值存在显著差异。
+
+</font>
+
+###2.3.1 多重比较步骤
+
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;1. 提出原假设
+$$
+H_0:\mu_i=\mu_j
+$$
+&emsp;&emsp;从原假设看出就是分别两两配对比较两组水平的均值是否有显著差异。
+
+&emsp;&emsp;2. 检验统计量
+$$
+t=\frac{\bar{X_i}-\bar{X_j}}{\sqrt{MSE(\frac{1}{n_i}+\frac{1}{n_j})}}
+$$
+&emsp;&emsp;这里的统计量就是配对样本中的t统计量。
+
+&emsp;&emsp;3. 判断条件
+$$
+|t| \ge t_\frac{\alpha}{2}(n-r)
+$$
+&emsp;&emsp;则拒绝原假设，第i组和第j组有显著差异，否则不能拒绝原假设，即不能说明这两组有显著差异。
+
+</font>
+
+###2.3.2 多种比较方法
+
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;LSD法：最灵敏，是最简单的比较方法之一，会犯假阳性错误；
+
+&emsp;&emsp;Sidak法：比LSD法保守；它在LSD法上加入了Sidak校正，通过校正降低每次两两比较的犯第一类错误的概率，使得整个比较最终第一类错误率为α；
+
+&emsp;&emsp;Bonferroni法：Bonferroni校正在LSD法上的应用；
+
+&emsp;&emsp;Scheffe法：多用于各组样本容量不等时的比较；
+
+&emsp;&emsp;Dunnet法：常用于多个实验组与一个对照组间的比较，因此使用此法时，应当指定对照组；
+
+&emsp;&emsp;S-N-K法：利用StudentizedRange分布进行假设检验，并根据均数的个数调整总的犯一类错误的概率不超过α；
+
+&emsp;&emsp;Turkey法：也是利用StudentizedRange分布进行各组均数间的比较，与S-N-K法不同，它是控制所有比较中最大的一类错误（即甲类错误）的概率不超过α，要求各组样本容量相同。
+
+&emsp;&emsp;这里每组样本容量是不相同的，所以采用Scheffe法来多重比较，agricolae包中的scheffe.test方法。
+
+```{r message=FALSE, warning=FALSE}
+library(agricolae)
+out <- scheffe.test(a.aov,"Treatment")# 进行多重比较，不矫正P值
+out$group# 结果显示：标记字母法
+plot(out)# 可视化
+```
+
+&emsp;&emsp;可以看出a,b两水平数据不存在显著差异，而a与c，b与C两水平数据存在显著差异。
+
+&emsp;&emsp;注意：多次重复使用t检验会增大犯第一类错误的概率，为了克服这一缺点，需要调整p值。R软件调整p值用的是p.adjust()函数，函数使用的不同参数代表不同的调整方法。作多重t检验。这里用到的pairwise.t.test()函数用来得到多重比较的p值。
+
+```{r message=FALSE, warning=FALSE}
+p.adjust.methods# 查看p.adjust.methods有哪些方法
+
+pairwise.t.test(Response,Treatment,p.adjust.method = "bonferroni")
+```
+
+&emsp;&emsp;从上述结果可见，a与b的P值为0.3926>0.05，所以a与b无显著差异，c与a,b有显著差异。
+
+</font>
+
+#3 Kruskal-Wallis秩和检验
+***
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;若数据的总体分布类型未知；或数据的总体分布类型已知，但不符合正态分布；或某些变量可能无法精确测量时，可以使用非参数统计方法.秩和检验是非参数统计中一种经常使用的检验方法。这里的“秩”即按照数据大小排定的次序号。此次序号的总和被称为“秩和”。
+
+```{r message=FALSE, warning=FALSE}
+medicine <- data.frame(
+  Response=c(7,5,3,1,6,5,3,3,7,9,9,9,4,3,4,3),
+  Treatment=factor(c(rep(1,4),rep(2,4),rep(3,4),rep(4,4)))
+)  
+kruskal.test(Response~Treatment,data=medicine)
+# kruskal.test(medicine$Response,medicine$Treatment)# 或这种写法
+```
+
+&emsp;&emsp;p值=0.0344<0.05，拒绝原假设，认为四种药物缓解疼痛效果有显著差异。
+
+</font>
+
+#4 双因素方差分析
+***
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;同时考察两个因素的方差分析称为多因素方差分析。如果因素A和因素B对试验结果的影响是相互独立的，则可以分别考察各自的影响，这种称为无交互作用的双因素方差分析；如果A和B除了各自的影响外，还有交互作用，那么称为有交互作用的双因素方差分析。那么交互作用在R中怎么判断呢？答案是通过可视化查看几组数据之间是否有交点，具体看下面。
+
+</font>
+
+##4.1 不考虑交互作用
+
+<font size=4 face="微软雅黑">
+
+<center>**无交互的双因素方差分析表**</center>
+
+| 方差来源 | 离差平方和SS |   自由度df    | 均方MS=SS/df |   F值    |
+| :--: | :-----: | :--------: | :--------: | :-----: |
+| A因素  |   SSA   |    r-1     |    MSA     | MSA/MSE |
+| B因素  |   SSB   |    k-1     |    MSB     | MSB/MSE |
+|  误差  |   SSE   | (r-1)(k-1) |    MSE     |    —    |
+| 总差异  |   SST   |    n-1     |     —      |    —    |
+
+&emsp;&emsp;这里一样在进行双因素方差分析之前需要分别对因素A,B进行方差齐次性检验，然后在方差分析时，同样采用aov函数，只是参数上有改变，在单因素的基础上多加因素即可。
+
+```{r message=FALSE, warning=FALSE}
+x=c(8,12,13,12,6,7,23,14,15,12,22,14,15,12,18,22)
+sales=data.frame(x,A=c(rep("m",8),rep("f",8)),B=c(rep("a",4),rep("b",4),rep("a",4),rep("b",4)))
+
+table(sales)
+
+bartlett.test(sales$x,sales$A)# 分别对A,B变量方差齐性检验
+
+bartlett.test(sales$x,sales$B)
+
+X.aov <- aov(x~A+B,data = sales)# 方差分析
+summary(X.aov)
+
+```
+
+&emsp;&emsp;检验的结论：因素A,B的P,分别为0.0971,0.6533。都大于0.05，不能拒绝原假设，因此没有充分的理由可以说明A,B变量的各水平的实验结果有显著差异。
+
+</font>
+
+##4.2 考虑交互作用
+
+<font size=4 face="微软雅黑">
+
+<center>**有交互的双因素方差分析表**</center>
+
+| 方差来源 | 离差平方和SS |   自由度df    | 均方MS=SS/df |    F值    |
+| :--: | :-----: | :--------: | :--------: | :------: |
+| A因素  |   SSA   |    r-1     |    MSA     | MSA/MSE  |
+| B因素  |   SSB   |    k-1     |    MSB     | MSB/MSE  |
+| 交互作用 |  SSAB   | (r-1)(k-1) |    MSAB    | MSAB/MSE |
+|  误差  |   SST   |  kr(m-1)   |    MSE     |    —     |
+| 总差异  |   SST   |    n-1     |     —      |    —     |
+
+&emsp;&emsp;m为重复试验的次数。
+
+&emsp;&emsp;交互作用：当一个因素的水平在另一个因素的不同水平上变化趋势不一致时，我们称两个因素之间存在交互作用。
+
+&emsp;&emsp;首先为了建立数据集，引入生成因子水平的函数gl()，其调用格式为：
+
+&emsp;&emsp;gl(n, k, length=n×k,labels=1:n,ordered=FALSE)
+
+&emsp;&emsp;n是因子的水平个数;
+
+&emsp;&emsp;k表示每一水平上的重复次数;
+
+&emsp;&emsp;length=n×k表示总观测数;
+
+&emsp;&emsp;可通过参数labels对因子的不同水平添加标签;
+
+&emsp;&emsp;ordered为逻辑值，指示是否排序。
+
+```{r message=FALSE, warning=FALSE}
+time=c(25,24,27,25,25,19,20,23,22,21,29,28,31,28,30,20,17,22,21,17,18,17,13,16,12,22,18,24,21,22)
+traffic=data.frame(time,A=gl(2,15,30),B=gl(3,5,30,labels=c("I","II","III")))
+table(traffic)
+
+bartlett.test(time~A, data=traffic)# 方差齐性检验
+
+bartlett.test(time~B, data=traffic)
+
+```
+
+&emsp;&emsp;接下来画图可视化查看交互效应。利用函数interaction.plot()绘制交互效应图：
+
+```{r message=FALSE, warning=FALSE}
+attach(traffic)
+interaction.plot(A,B,time,legend=F)
+interaction.plot(B,A,time,legend=F)
+```
+
+
+&emsp;&emsp;曲线均没有相交，所以可以初步判断两个因素之间应该没有交互作用。也可以用effects包来查看A,B 的交互效应。
+
+```{r message=FALSE, warning=FALSE}
+library(effects)
+traffic.aov <- aov(time ~ A + B + A:B, data = traffic)
+plot(effect(c("A","B"),traffic.aov),multiline=TRUE)
+```
+
+
+&emsp;&emsp;用方差分析进行确认：
+
+```{r message=FALSE, warning=FALSE}
+# 方差分析
+traffic.aov <- aov(time ~A+B+A:B,data = traffic)
+summary(traffic.aov)
+```
+
+&emsp;&emsp;P值都非常小，拒绝原假设，认为A,B两变量各水平的实验结果都有显著差异，但是AB之间的交互作用不显著。
+
+</font>
+
+##4.3 多重两两比较
+
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;这里每个水平的样本容量都相等，所以采用Turkey方法多重比较。
+
+```{r message=FALSE, warning=FALSE}
+traffic.aov <- aov(time ~A+B,data = traffic)# 由上面结果得知无交互效应，则去掉A:B
+TukeyHSD(traffic.aov)
+```
+
+&emsp;&emsp;因为P值都小于0.05。所以拒绝原假设，A的两组之间有显著差异，B组三组之间互有显著差异。
+
+</font>
+
+#5 本章汇总
+***
+<font size=4 face="微软雅黑">
+
+| 名称                 | 类别   | 功能               |
+| ------------------ | ---- | ---------------- |
+| attach()           | 函数   | 为了避免重复地键入对象名称    |
+| shapiro.test()     | 函数   | 正态性检验            |
+| table()            | 函数   | 将对象形成表格          |
+| car                | 包    | 模型诊断包            |
+| qqPlot()           | 函数   | 画QQ图，查看数据是否是正态分布 |
+| bartlett.test()    | 函数   | 方差齐性检验           |
+| aov()              | 函数   | 方差分析             |
+| summary()          | 函数   | 结果查看             |
+| model.tables()     | 函数   | 模型结果表            |
+| scheffe.test()     | 函数   | 多重比较             |
+| pairwise.t.test()  | 函数   | 配对样本t检验          |
+| kruskal.test()     | 函数   | 秩和检验             |
+| gl()               | 函数   | 生成因子水平的函数        |
+| interaction.plot() | 函数   | 画因子交互图           |
+| plot()             | 函数   | 画图基本函数           |
+| TukeyHSD()         | 函数   | 多重比较             |
+
+</font>

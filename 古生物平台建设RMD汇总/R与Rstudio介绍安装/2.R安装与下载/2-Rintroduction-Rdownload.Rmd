@@ -1,0 +1,118 @@
+---
+title: "R语言入门"
+output: 
+  html_document:
+    number_sections: TRUE
+    toc: TRUE
+    toc_float: TRUE
+    code_folding: show
+    fig_width: 7
+    fig_height: 4.5
+    theme: united
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#  R的安装与下载 
+***
+<font size=4 face="微软雅黑">
+<span style="color:blue">&emsp;&emsp;[R官方下载网站:http://www.r-project.org](http://www.r-project.org)</span>
+
+&emsp;&emsp;打开网页点击download R，然后选择适合自己电脑系统的R语言版本，安装过程中建议初学者可选择R语言的中文版本进行选择安装，逐渐培养兴趣。
+
+&emsp;&emsp;安装下载具体操作如下所示：
+
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;**Step1:download R**
+
+
+</font>
+![ ](D:\TASK\图片\安装.png)
+
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;**Step2:select R**
+
+
+</font>
+![ ](D:\TASK\图片\中国镜像.png)
+
+
+&emsp;&emsp;**Step3:选择配置系统的R**
+
+
+</font>
+![ ](D:\TASK\图片\配置.png)
+
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;**Step4:选择最新版本R**
+
+
+</font>
+![ ](D:\TASK\图片\最新版本.png)
+
+
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;**Step5:下载Windows的R**
+
+
+</font>
+![ ](D:\TASK\图片\windowsR.png)
+
+
+<font size=4 face="微软雅黑">
+
+
+<font size=4 face="微软雅黑">
+
+#  R菜单简介
+***
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;启动R语言之后，显示R语言窗口如下图所示：
+
+
+</font>
+![ ](D:\TASK\图片\启动R.png)
+
+
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;<span style="color:red">注：菜单栏可选中英文状态。</span>
+
+&emsp;&emsp;**文件菜单**：主要用于R程序的新建、打开、打印和保存，R工作空间的管理等。
+
+&emsp;&emsp;**编辑菜单**：主要服务于R程序的编写以及R控制台清空管理。
+
+&emsp;&emsp;**查看菜单**：指定在主窗口中是否显示状态栏，是否显示工具栏
+
+&emsp;&emsp;**其它菜单**：主要用于终止当前或所有运算，显示或删除工作空间中包含的R对象，显示当前已经加载的包名称列表等。
+
+&emsp;&emsp;**程序包菜单**：主要用于加载已下载的包。联网条件下，指定镜像地址，下载安装其它包，对已下载的包进行更新等。
+
+&emsp;&emsp;**窗口菜单**：主要用于指定R主窗口中所包含的其它窗口，设置排列方式等。
+
+&emsp;&emsp;**帮助菜单**：主要用于以各种方式浏览R的帮助文档。  
+
+&emsp;&emsp;<span style="color:red">注：在菜单栏目的文件下，新建程序脚本，打开R的编辑器，可以直接进行代码的书写，当代码写完后，选中所写代码，用键盘组合快捷键ctrl+R运行。</span>
+
+
+</font>
+![ ](D:\TASK\图片\菜单下运行.png)
+
+#  R功能键
+***
+&emsp;&emsp;R的功能键，在不同的系统下不同，以windows系统、mac系统下安装的R在使用功能键进行操作，如下所示：
+
+```{r,echo=FALSE,message=FALSE,warning=FALSE}
+library(readxl)
+library(knitr)          # 加载knitr包，为了使用kable函数
+R快捷键 = read_excel("D:/TASK/1R语言介绍与安装/R快捷键.xlsx")   ## 读取原始数据
+kable(head(R快捷键 ,12))
+```

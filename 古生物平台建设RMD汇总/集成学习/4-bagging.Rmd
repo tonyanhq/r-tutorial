@@ -1,0 +1,356 @@
+---
+title: "Bagging"
+output: 
+  html_document:
+    number_sections: TRUE
+    toc: TRUE
+    toc_float: TRUE
+    code_folding: show
+    fig_width: 7
+    fig_height: 4.5
+    theme: united
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;集成学习是指通过构建并结合多个学习分类器来完成学习任务。如果集成是‘同质’的（即所有个体学习器是同一种算法）那么这些个体学习器称为基学习器（base learner）。‘异质’的称为‘组件学习器’（component learner）。
+
+&emsp;&emsp;通常认为将多个分类器结合的学习，比单一分类器的学习要准确的多。要想得到好的集成分类器，一个是基分类器要有一定的准确性，至少不能随机扔硬币猜正反还离谱；其次要有多样性，也就是分类器间有差异性存在，这样才能保证泛化能力不至于太差。
+
+
+
+# 概述
+***
+<font size=4 face="微软雅黑">
+&emsp;&emsp;集成学习是近年来机器学习领域中的研究热点之一。经典的两个集成算法是Bagging和AdaBoost，他们分别以某种巧妙的方式将若干基分类器的预测结果进行综合，以达到显著提升分类效果的目的。
+
+## 个体与集成
+&emsp;&emsp;集成学习（ensemble learning）通过构建并结合多个学习器来完成学习任务，也称为多分类器系统（multi-classifier system）、基于委员会的学习（committee-based learning）。
+
+&emsp;&emsp;集成学习的一般结构：先产生一组个体学习器（individual learner），再用某种策略将它们结合起来。个体学习器通常由一个现有的学习算法从训练数据产生，如决策树算法、BP神经网络等。如果集成中只包含同种类型的个体学习器，则集成是同质的（homogeneous）；同质集成中的个体学习器也称为基学习器（base learner），相应的学习算法称为基学习算法（base learningalgorithm）。如果集成中包含不同类型的个体学习器，则集成是异质的（heterogenous）；异质集成中的个体学习器由不同的学习算法生成，个体学习器称为组件学习器（component learner）。
+
+&emsp;&emsp;说了定义，那么集成学习器是否比个体学习器泛化性能更显著呢？先引入弱学习器（weak learner）的定义，弱学习器常指泛化性能略优于随机猜测的学习器，例如在二分类问题上精度略高于50%的分类器。换句话说，弱学习器的结果接近于靠猜。集成学习通过将多个学习器进行结合，通常可以获得比单一学习器显著优越的泛化性能，这对弱学习器尤其明显，因此集成学习的很多理论研究是针对弱学习器进行的，而基学习器有时也被直接成为弱学习器。
+
+&emsp;&emsp;现在问题是：集成学习把多个学习器结合起来，怎样能获得比单一学习器更好的性能呢？要获得好的集成，个体学习器应好而不同，即个体学习器要有一定的准确性，即学习器不太坏，并且要有多样性（diversity），即学习器间具有差异。
+
+&emsp;&emsp;考虑二分类问题$y\in\{-1,+1\}$和真实函数$f$，假定基分类器的错误率为$\epsilon$，即对每个基分类器$h_i$有$$P(h_i(x)\neq f(x))=\epsilon$$
+&emsp;&emsp;假设集成通过简单投票法结合$T$个基分类器，若有超过半数的基分类器正确，则集成分类就正确：$$H(x)=sign(\sum_{i=1}^{T}h_i(x))$$
+&emsp;&emsp;假设基分类器的错误率相互独立，则由Hoeffding不等式可知，集成的错误率为$$P(H(x)\neq f(x))=\sum_{k=0}^{[T/2]}\begin{pmatrix} T \\ k \end{pmatrix}\\(1-\epsilon)^k\epsilon^{T-k}\leq exp(-\frac{1}{2}T(1-2\epsilon)^2$$
+&emsp;&emsp;上式显示，随着集成中个体分类器数目$T$的增大，集成的错误率将指数级下降，最终趋向于0。  
+&emsp;&emsp;Hoeffding不等式是关于一组随机变量均值的概率不等式。如果$X_1,X_2,···,X_n$为一组独立同分布的参数为$p$的伯努利分布随机变量，$n$为随机变量的个数，定义这组随机变量的均值为：$$\overline{X}=\frac{X_1+X_2+…+X_n}{n}$$
+&emsp;&emsp;对于任意$\delta>0$，Hoeffding不等式可以表示为：$$P(|\overline{X}-E(\overline{X})|\geq \delta)\leq exp(-2\delta^2n^2)$$
+
+&emsp;&emsp;如上，集成学习就是把所有个体学习器的结果做简单的投票，这样就能获得比个体学习器更好的泛化性能。等等，没有这么好的事了，要这样说，需要满足一个关键假设：基学习器的误差相互独立。然后在现实任务中，个体学习器时为解决同一问题训练出来的，它们显然不可能相互独立。事实上，个体学习器的准确性和多样性本身就存在冲突。一般的，准确性很高之后，要增加多样性就要牺牲准确性。
+
+&emsp;&emsp;因此，如何产生并结合好而不同的个体学习器，就是集成学习研究的核心，就是怎么集成？集成怎么样的个体学习器？根据个体学习器的生成方式，目前的集成学习方法大致可分为两大类：  
+&emsp;&emsp;1）个体学习器间存在强依赖关系、必须串行生成的序列化方法，代表是Boosting；  
+&emsp;&emsp;2）个体学习器间不存在强依赖关系、可同时生成的并行化方法，代表是Bagging和随机森林（Random Forest）。
+
+
+## Boosting
+&emsp;&emsp;先从训练集中训练出一个基分类器，利用此分类器进行分类，根据分类结果对训练样本的分布进行调整，对于先前分错的训练样本在后续的分类中享有更多关注，然后对于调整后的训练样本，再训练第二个基分类器；就这样迭代重复进行，直至满足某个截止条件。Adaboost是Boosting的典型代表。
+
+&emsp;&emsp;算法优点：应用于分类问题。Adaboost分类器可以排除一些不必要的训练数据特征，并将关键放在关键的训练数据上面。
+
+**过程分析**
+
+&emsp;&emsp;Adaboost，一开始就提到是一种迭代算法，也是一个简单的弱分类算法提升过程，怎样个提升法呢？由于单单依靠弱分类算法还难以保证分类结果的准确性，因而Adaboost的提升过程就是通过不断的训练，提高对数据的分类能力。详细流程如下：
+
+&emsp;&emsp;1. 先通过对N个训练样本（预先给定）的学习（Offline Learning)得到第一个弱分类器；
+
+&emsp;&emsp;2. 将分错的样本（怎么知道样本被分错了呢？）和其它的新数据一起（错了就要和待审核的一起），构成一个新的N个的训练样本，重复第一步，即通过对这个样本的学习得到第二个弱分类器（体现迭代）；
+
+&emsp;&emsp;3. 将1和2都分错了的样本（其实就是2里分错的样本，因为1里错的样本已经全部给到2了），加上其它的新样本构成另一个新的N个的训练样本，通过对这个样本的学习得到第三个弱分类器；
+
+&emsp;&emsp;4. 最终，经过提升的强分类器，即某个数据被分为哪一类要通过多数表决
+
+ 
+
+**存在的问题及改进方法**
+
+&emsp;&emsp;对于boosting算法，存在两个问题：
+
+&emsp;&emsp;1. 如何调整训练集，使得在训练集上训练的弱分类器得以进行；换句话说，就是，当每次上层N个训练样本训练结束之后，如何调整训练集，将分错的样本与新数据结合起来，构成新的N个训练样本，供下一层学习。
+
+&emsp;&emsp;2. 如何将训练得到的各个弱分类器联合起来形成强分类器；换句话说，要纪录每次得到的弱分类器，最后将每个样本在每个分类器中得到的数据，进行比较，投票。多数表决通过！
+
+&emsp;&emsp;针对以上两个问题，Adaboost算法进行了调整：（引入了权重的概念）
+
+&emsp;&emsp;1. 使用加权后选取的训练数据代替随机选取的训练样本，这样，将训练的焦点集中在比较难分的训练数据样本上；
+
+&emsp;&emsp;2. 将弱分类器联合起来，使用加权的投票机制代替平均投票机制。让分类效果好的弱分类器具有较大的权重，而分类效果差的分类器具有较小的权重。
+
+**关于权重的理解**
+
+&emsp;&emsp;Adaboost算法中不同的训练集是通过调整每个样本对应的权重来实现的。开始时，每个样本对应的权重是相同的，即其中n为样本个数，在此样本分布下训练出一弱分类器。对于分类错误的样本，加大其对应的权重；而对于分类正确的样本，降低其权重，这样，分错的样本就被突显出来（权重大的），从而得到一个新的样本分布。
+
+&emsp;&emsp;在新的样本分布下，再次对样本进行训练，又得到一个弱分类器，又加大分类错误的样本的权重。
+
+&emsp;&emsp;依次类推，经过T次循环，得到T个弱分类器，把这T个弱分类器按一定的权重叠加（boost）起来，得到最终想要的强分类器！
+
+
+**Adaboost算法的具体步骤**
+
+&emsp;&emsp;1. 给定训练样本集S，其中X和Y分别对应于正例样本和负例样本（即两个分类结果）；T为训练的最大循环次数；
+
+&emsp;&emsp;2. 初始化样本权重为1/n，即为训练样本的初始概率分布（即离散型均匀分布）；
+
+&emsp;&emsp;3. 第一次迭代：
+
+（1）训练样本的概率分布相当下，训练弱分类器；
+
+（2）计算弱分类器的错误率（怎么计算呢？错误率 ＝ 分类出错的样本个数 / 总的样本个数）；
+
+（3）选取合适阀值，使得误差最小；
+
+（4）更新样本权重（新的样本权重替代旧的）；
+
+&emsp;&emsp;经过T次循环后，得到T个弱分类器，按更新的权重叠加，最终得到强分类器。
+
+&emsp;&emsp;步骤总结：上述的算法步骤迭代了T次的主循环，每一次循环根据当前的权重分布对样本x定一个分布P，然后对这个分布下的所有样本使用弱学习算法得到一个弱分类器。每一次迭代，都要对权重进行更新！更新的规则就是：减小弱分类器分类效果较好的数据的概率，增大弱分类器分类效果较差的数据的概率，最终的分类器是一个所有弱分类器的加权平均
+
+
+## Bagging与随机森林
+
+&emsp;&emsp;Bagging 是并行集成学习的代表。基于有放回的采样，采样出T个含m个样本的采样集，有放回的采样使得样本在采样集中有的多次出现，有的从未出现，这样既保证了训练数据的不同，使得基分类器有差异，但又不能差太多，否则若每个子集完全不同，则每个分类器只用到了一小部分训练数据，不足以进行有效学习。
+
+&emsp;&emsp;Bagging的优势:高效而且可以不经修改地适用于多分类任务、回归任务；此外由于它只用了一部分样本，剩下的部分可用来测试，便于交叉验证，提升泛化性能。
+
+&emsp;&emsp;随机森林在构建Bagging集成的基础上，在决策树训练时引入了随机属性选择。即，传统决策树在划分属性时在当前节点的属性中选择一个最优的属性，而在随机森林中，每个决策树的每个节点，会先随机选择一个包含k个属性的子集，然后再从这k个属性中选择一个最优属性用于划分;
+
+&emsp;&emsp;随机森林的优势：训练效率高于bagging，因为Bagging用的是"确定性"的决策树，要对所有节点的属性进行考察，而随机森林用的是随机性决策树，只需要考察一个属性子集，一个是整体，一个是部分，随机森林效率高一些。
+
+
+&emsp;&emsp;随机森林改进点:
+
+&emsp;&emsp;森林中任意两棵树的相关性：相关性越大，错误率越大；  
+&emsp;&emsp;森林中每棵树的分类能力：每棵树的分类能力越强，整个森林的错误率越低。
+
+
+## Bagging与Boosting算法的对比
+&emsp;&emsp;Boosting与Bagging 相比来说最大的区别就是： Boosting是串行的，而Bagging中所有的分类器是可以同时生成的，之间没有什么关系，而Boosting中则必须先生成第一个分类器，然后根据第一个分类器的结果生成第二个分类器，依次往后进行。
+
+项目 | Bagging | Boosting
+---- | ------- | --------
+结构 | 并行 | 串行
+训练集 | 独立 | 依赖
+测试 | 可并行 | 需串行
+作用 | 减小方差 | 减小偏差
+
+## 方差与偏差
+
+&emsp;&emsp;机器学习模型的Bias和Variance分析，Understanding the Bias-Variance Tradeoff（ http://scott.fortmann-roe.com/docs/BiasVariance.html ）中的一副图生动形象地为我们展示了偏差和方差的关系：
+
+![](E:\PKU_R\ensemble1.png)
+
+&emsp;&emsp;简单来说，一个模型越复杂，对训练样本的拟合度会越高，其Bias会越小（训练误差小）。但是，由于对数据过于敏感，生成的模型的变化范围可能比较大（Variance较大），可能导致在测试数据上性能的不确定性较高。
+
+# R的实现
+***
+<font size=4 face="微软雅黑">
+
+## 相关软件包
+&emsp;&emsp;本章节将使用adabag软件包来实现算法，这个软件包主要专注于Bagging和Boosting两个算法，含有若干相关函数。
+
+## 核心函数 {.tabset .tabset-fade .tabset-pills}
+<font size=4 face="微软雅黑">
+
+### bagging()函数
+&emsp;&emsp;函数bagging()的基本格式是：
+
+```
+bagging(formula, data, mfinal = 100, control, par=FALSE,...)
+```
+&emsp;&emsp;其中，bagging()函数含有4个参数。  
+&emsp;&emsp;formula参数用于建模的公式，格式为 y~x1+x2+x3；  
+&emsp;&emsp;data中放置待训练的数据集；  
+&emsp;&emsp;mfinal参数表示算法的迭代次数，也就是基分类器的个数，可以设置为任意整数，缺失值为100；  
+&emsp;&emsp;control参数与rpart()函数中的相同，用于控制基分类器的参数。
+
+### boosting()函数
+&emsp;&emsp;函数boosting()中的Adaboost算法以分类树为基分类器，基本格式为：
+```
+boosting(formula, data, boos = TRUE, mfinal = 100, coeflearn = 'Breiman', control,...)
+```
+&emsp;&emsp;其中，formula、data、mfinal及control参数与bagging()函数中的完全相同；  
+&emsp;&emsp;boos参数用于选择迭代过程中，是否用各观测样本的相应权重来抽取boostrap样本，其默认值为TRUE，如果取FALSE，则每一个观测样本都以其相应权重在迭代过程中被使用；  
+&emsp;&emsp;coeflearn用于选择权重更新系数alpha的计算方式，默认取Breiman，即alpha = 1/2ln((1-err)/err)，另外也可以更改设置为“Freund”或“Zhu”。
+
+## 数据集
+&emsp;&emsp;本章我们使用用于多元回归树的mvpart软件包中的car.test.frame数据集进行演示，我们首先对其进行简单的了解。首先需要进行mvpart软件包的安装，这里的安装稍微较为复杂，需先安装devtools软件包来实现，具体操作如下：
+```{r}
+## install.packages("devtools")              # 安装devtools软件包
+## devtools::install_github("cran/mvpart")   # 安装mvpart镜像
+## devtools::install_github("cran/MVPARTwrap") # 安装MVPARTwrap镜像
+## install.packages("mvpart")                # 安装mvpart软件包
+library(mvpart)                              # 加载mvpart软件包
+data("car.test.frame")                       # 获取car.test.frame数据集
+head(car.test.frame)                         # 显示car.test.frame数据集的前6行
+summary(car.test.frame)                      # 获取car.test.frame数据集的概况信息
+```
+
+&emsp;&emsp;在获取完以上信息之后，我们来看car.test.frame数据集的基本信息。它一共包含60个样本以及8个变量，分别为“价格Price”、“产地Country”、“可靠性Reliability”、“英里数Mileage”、“类型Type”、“车重Weight”、“发动机功率Disp.”和“净马力HP”。
+
+&emsp;&emsp;为了之后分析的过程便于理解，我们将数据集变量名改为中文，“英里数Mileage”换算为“油耗”指标，实现代码如下：
+```{r}
+car.test.frame$Mileage <- 100*4.546/(1.6*car.test.frame$Mileage)  # 将“英里数Mileage”换算为“油耗”指标
+names(car.test.frame) <- c("价格","产地","可靠性","油耗","类型","车重","发动机功率","净马力")  # 将变量名个呢更换为中文
+head(car.test.frame)
+```
+
+
+&emsp;&emsp;为了进一步了解各个变量的信息，我们分别使用str()函数和summary()函数。
+```{r}
+str(car.test.frame)    # 探寻数据集内部的结构
+```
+
+&emsp;&emsp;根据上述结果我们可以看出，数据集的维度为60×8，其中“产地”与“类型”变量是含有8个和6个水平的因子型变量，其他6个变量都为整型变量。
+
+&emsp;&emsp;在如下的summary()输出结果中，对于因子型变量，给出了各个水平分别对应的样本个数，而数值型数据则给出了最值及中位数等基本统计量指标。
+```{r}
+summary(car.test.frame)    # 获取car.test.frame数据集的信息
+```
+
+
+&emsp;&emsp;由于在建模过程中，主要以“油耗”变量作为目标变量，所以考虑添加一个变量“分组油耗”，也就是说将“油耗”变量划分为三个组别，A组：11.6-15.8、B组：9-11.6、C组：7.7-9个油，成为含有3个水平的因子变量。
+```{r}
+Group_Mileage <- matrix(0,60,1)  # 构造Group_Mileage矩阵来存放新变量
+Group_Mileage[which(car.test.frame$油耗>=11.6)] <- "A"  # 将油耗在11.6-15.8的样本Group_Mileage取值为A
+Group_Mileage[which(car.test.frame$油耗<=9)] <- "C" # 将油耗在7.7-9的样本Group_Mileage取值为C
+Group_Mileage[which(Group_Mileage==0)] <- "B"  # 将油耗不在组A和组C的样本取值为B
+car.test.frame$"分组油耗" <- Group_Mileage     # 添加新变量“分组变量”，取值为Group_Mileage
+car.test.frame[1:10, c(4,9)]                   # 查看前10行数据的“油耗”及“分组油耗”信息
+```
+
+
+&emsp;&emsp;我们使用数据集的四分之一样本作为测试集来评价分类器的性能，也就是说3/4的样本建立训练集，1/4的样本建立测试集。为了保持数据集分布，使用sampling软件包中的strata()函数来进行分层抽样，即在A、B、C组的英里数样本中分别抽取1/4共同构成测试集。以下为训练集与测试集的构造过程：
+```{r}
+a <- round(1/4*sum(car.test.frame$分组油耗 == "A")) # 将A组的测试集样本数记为a
+b <- round(1/4*sum(car.test.frame$分组油耗 == "B")) # 将B组的测试集样本数记为b
+c <- round(1/4*sum(car.test.frame$分组油耗 == "C")) # 将C组的测试集样本数记为c
+
+a;b;c  # 分别输出a、b、c的值
+
+library(sampling)   # 载入sampling软件包
+sub <- strata(car.test.frame, stratanames = "分组油耗", 
+              size = c(c,b,a), method = "srswor")   # 将“分组油耗”变量进行分层抽样
+sub    # 显示抽样样本的信息
+car_train <- car.test.frame[-sub$ID_unit, ] # 生成训练集car_train
+car_test <- car.test.frame[sub$ID_unit, ]   # 生成测试集car_test
+nrow(car_train); nrow(car_test)             # 显示训练集、测试集的行数，判断其比例是否为3:1
+```
+
+
+# 应用案例
+***
+<font size=4 face="微软雅黑">
+&emsp;&emsp;下面我们将分别使用bagging()与boosting()函数来实现相应的算法。
+
+## Bagging算法
+&emsp;&emsp;首先，我们需要下载和载入所需的软件包
+```{r}
+## install.packages('adabag')    # 下载adabag软件包
+## install.packages('rpart')     # 下载rpart软件包
+library(adabag)               # 载入adabag软件包
+library(rpart)                # 载入rpart软件包
+```
+
+### 对训练集data_train运行Bagging算法
+&emsp;&emsp;下面我们开始使用bagging()函数建立模型，为了便于说明输出结果，仅在迭代过程中生5棵决策树，即设定mfinal = 5.
+```{r}
+car_train$油耗 <- as.factor(car_train$油耗)      # 将car_train中因变量转换成因子型
+formula_Car <- 油耗~价格+产地+可靠性+类型+车重+发动机功率+净马力  # 设定模型公式
+bag <- bagging(formula_Car, car_train, control=(minsplit=0), mfinal = 5)   # 使用bagging()函数建模，记为bag
+names(bag)  # 查看模型bag中生成的所有输出项名称
+bag$formula  # 将建立bag模型的公式显示出来
+```
+
+&emsp;&emsp;第二项为迭代过程中所生成的每棵决策树trees的具体情况，而这里树的个数即为参数mfinal的取值，如下仅输出了其中第二棵决策树的具体构成。
+
+&emsp;&emsp;我们可以看到，得到的一棵枝干茂盛的分类树，因此可以通过control参数来控制基分类器的相关参数。
+
+```{r}
+bag$trees[2]  # 模型bag中第二棵决策树的构成
+```
+
+&emsp;&emsp;第三项为Bagging算法对每一个观测样本关于两个类别no和yes的投票votes情况，由于其建立了5棵决策树，且每棵树对每一个样本的类别都有各自的判断，则总票数为5，Bagging算法最终是根据某样本在各类别中所获得票数的高低来决定该样本所属的类别。
+```{r}
+bag$votes[30:35,]         # 模型bag中第30至第35个样本的投票情况
+```
+
+&emsp;&emsp;第四项为每一个样本属于各类的概率prob矩阵，可以简单看作是votes结果的百分比形式。
+```{r}
+bag$prob[30:35,]   # 模型bag中第30至第35个样本被预测为各类别的概率
+```
+
+&emsp;&emsp;第五项为Bagging算法对于各个样本所属类别class的最终判断。这个结果与上述两个votes和prob结果相符
+```{r}
+bag$class[30:35]   # 模型bag对于第30至第35个样本的预测类别
+```
+
+&emsp;&emsp;第六项为5次迭代过程中所使用的boostrap样本。
+```{r}
+bag$samples[30:35,]   # 模型bag中第30至第35个样本在5次迭代过程中的抽样情况
+```
+
+&emsp;&emsp;第七项为各输入变量在分类过程中的相对重要性，并绘制其中变量重要程度的条形图。从图中可以看出，数值越高的变量重要性越高。
+```{r}
+bag$importance    # 模型bag中各输入变量的相对重要性
+barplot(bag$importance)   # 绘制重要性条形图
+```
+
+&emsp;&emsp;现在我们来看trees输出项得到的子树茂盛的问题，可以通过control参数中树的深度maxdepth来控制基分类树的大学，这里设置为3，所得子树的复杂度明显降低。
+```{r}
+bag1 <- bagging(formula_Car, car_train, mfinal = 5, control = rpart.control(maxdepth = 3))   # 通过control参数控制基分类树的复杂度
+bag1$terms[2]   # 查看第二棵子树的结构
+```
+
+### 对测试集的目标变量进行预测
+&emsp;&emsp;下面我们使用如上建立的bag模型来对测试集中的油耗进行预测，迭代次数仍然设置为5。
+```{r}
+car_test$油耗 <- as.factor(car_test$油耗)  # 将测试集数据的油耗变量变为因子型
+pre_bag <- predict(bag, car_test)   # 使用bag模型对测试集中目标变量进行预测
+names(pre_bag)  # 查看预测结果的项目名称
+```
+
+&emsp;&emsp;第一项formula为建模公式，第二项votes为5棵子树对这15个测试样本的投票情况。
+```{r}
+pre_bag$votes[1:10,]    # 预测结果pre_bag中前10个样本的投票情况
+```
+
+
+&emsp;&emsp;另外，不平衡数据问题在理论和实际中都是一个日趋重要的话题，如有兴趣可以查阅相关资料进行更加深入的了解。
+
+
+## Adaboost算法
+&emsp;&emsp;boosting()函数与bagging()函数的使用方式相同，不再赘述。我们直接对训练集car_train进行adaboost算法，并对测试集car_test进行预测，迭代次数依旧为5。
+
+```{r}
+boo <- boosting(formula_Car, car_train, mfinal = 5)  # 构建Adaboost模型
+boo$votes[30:35,]      # 模型boo中第30个至第35个样本的投票情况
+pre_boo <- predict(boo, car_test)     # 使用boo模型对测试集中的目标变量的取值进行预测
+pre_boo$votes[1:10,]   # 预测结果boo的前10个样本的投票情况
+```
+
+
+# 本章汇总
+***
+<font size=4 face="微软雅黑">
+
+项目 | 类别 | 作用
+---- | ---- | ----
+adaba | 软件包 | 提供bagging()函数和boosting()函数
+bagging() | 函数 | 实现Bagging算法
+boosting() | 函数 | 实现Boosting算法
+car.test.frame | 数据集 | mvpart软件包提供的汽车数据集
+
+
+# 参考文献
+***
+<font size=4 face="微软雅黑">
+[1] 周志华. 机器学习 : = Machine learning[M]. 清华大学出版社, 2016.  
+[2] 黄文, 王正林. 数据挖掘 : R语言实战[M]. 电子工业出版社, 2014.  

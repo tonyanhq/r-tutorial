@@ -1,0 +1,167 @@
+---
+title: "数据结构-数据字符函数"
+output: 
+  html_document:
+    number_sections: TRUE
+    toc: TRUE
+    toc_float: TRUE
+    code_folding: show
+    fig_width: 7
+    fig_height: 4.5
+    theme: united
+    highlight: tango
+---
+
+# 数据准备前期常用函数
+***
+<font size=4 face="微软雅黑">
+  
+数据准备前期函数，以常用的为例进行介绍，如下所示：
+```{r,echo=FALSE,message=FALSE,warning=FALSE}
+library(readxl)
+library(knitr)          # 加载knitr包，为了使用kable函数
+前期函数 = read_excel("D:/TASK/2R语言基础/数据准备前期常用函数.xlsx")   ## 读取原始数据
+kable(head(前期函数,14))
+```
+
+# R语言之正则表达式
+***
+<font size=4 face="微软雅黑">
+ 
+数据字符函数，以常用的为例进行介绍。
+
+1）字符串匹配
+
+<font size=4 face="微软雅黑">
+grep（）          # 字符串匹配
+
+grep(pattern,X)   # 可以计算pattern出现在X的第几个元素
+
+pattern:搜索目标的内容
+
+X：字符串向量
+```{r,}
+grep("A",c("AR","ar","AE","ae"))
+```
+从上面执行结果得出A出现在1和3元素中
+
+2）获取字符串长度
+
+<font size=4 face="微软雅黑">
+nchar（） # 获取字符串长度
+```{r,}
+nchar(c("AR","a","AE","aed"))
+```
+
+从执行结果得出字符串长度分别为2、1、2、3.
+
+3）获取向量的长度
+
+<font size=4 face="微软雅黑">
+length（） # 取向量的长度
+```{r,}
+V<-c("AR","ar","AE","ae")
+length(V) #获取向量长度
+```
+得出向量的长度为4
+
+4）字符串粘合
+
+<font size=4 face="微软雅黑">
+paste（）
+
+paste(V1,V2,sep="A")# 以A为分隔符连接V1,V2
+```{r,}
+V1<-c("abc","a")
+V2<-c("12","d")
+paste(V1,V2,sep="-")# 以-为分隔符连接V1,V2
+```
+以“-”为分隔符连接V1,V2，得出结果是“abc-12”，“a-d” 。
+
+5）字符串截取
+
+<font size=4 face="微软雅黑">
+substr（）
+
+substr(X,N,M)
+
+对给定的字符串对象取出子集，其参数是子集所处的起始和终止位置。
+
+1.substr(数据集,start= ,stop= )
+```{r,}
+substr(state.name,start=4,stop=8)
+```
+
+2.substr(X,n,m)#取X得第n~m的字符
+```{r,}
+substr("abcdef",3,5)
+```
+
+得出"abcdef"字符串的3-5位的字符为"cde"
+
+6）sub（）
+
+<font size=4 face="微软雅黑">
+sub(pattern,replacement,x)
+
+pattern:搜索的字符串
+
+replacement：要代替的字符串
+
+x：字符串向量
+
+R语言内系统自带的数据集state.name
+```{r,}
+state.name
+```
+将state.name里的带有“New”的州名改为“Old”。
+```{r,}
+sub("New","Old",state.name)
+```
+
+7）gsub（）
+
+<font size=4 face="微软雅黑">
+
+数据框中的函数是gsub，基本书写格式为：
+
+data$变量=gsub("变量里包含的文字"，data $变量)
+
+```{r,}   
+data=read.csv("F:/cardata.csv", stringsAsFactors=F)    ##导入csv数据
+str(data)
+```
+
+如以下，数据是不规整的，对其进行清洗如下
+
+对其变量进行重命名，得到如下数据：
+```{r,}  
+library(plyr)                          ##加载plyr包（用来重命名变量名）
+data=rename(data,c(V1="车名",V2="卖家报价",V3="上牌时间",V4="车程",V5="排放标准",V6="排量",V7="原价"))           ##变量重命名
+str(data)
+```
+
+&emsp;&emsp;变量重命名后观察数据，按理说报价、车程、排量、原价应该为数值型数值，但在这个数据中由于这几个变量里包含有变量名以及单位所以就成为了字符串型，利用正则表达式里的gsub函数将变量规整。
+```{r,}
+data$卖家报价=gsub("卖家报价：￥","",data$卖家报价)##报价一般为数值型数据，且此数据卖家报价单位：（万）
+data$卖家报价=gsub("万","",data$卖家报价)
+data$车程=gsub("万公里","",data$车程)
+data$排量=gsub("L 排量","",data$排量)##排量为数值型数据，单位：L
+data$原价=gsub("厂商新车指导价：","",data$原价)##原价为数值型数据，单位：万
+data$原价=gsub("万","",data$原价)##原价为数值型数据，单位：万
+str(data)
+```
+
+8)字符串分割
+
+<font size=4 face="微软雅黑">
+将字符串按照某种分割形式进行划分，是paste（）的逆操作。
+
+strsplit（）
+
+strsplit(X," ") # 以空格为界，将语句拆成单词
+```{r,}
+(X<-("Hello World"))
+```
+
+以空格为界，将语句“Hello World”拆成单词“Hello”， “World”。

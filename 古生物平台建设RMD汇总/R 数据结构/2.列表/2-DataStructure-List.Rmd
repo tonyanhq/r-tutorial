@@ -1,0 +1,89 @@
+---
+title: "数据结构-列表"
+output: 
+  html_document:
+    number_sections: TRUE
+    toc: TRUE
+    toc_float: TRUE
+    code_folding: show
+    fig_width: 7
+    fig_height: 4.5
+    theme: united
+    highlight: tango
+---
+
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;列表是一个二维数据，在R语言中使用list()函数来定义，列表中的每个元素可以是单个变量或者是向量，甚至是另一个列表。
+
+&emsp;&emsp;列表中每个向量的长度可以不同，这是列表和数据框的重要区别。数据框是一种形式特殊的列表。
+
+
+
+#  列表的访问与读取
+***
+创建列表函数的基本书写格式为：
+
+data<-list(成分名1=对象名1，成分名2=对象名2，…)
+```{r,}
+data<-list(subject=c("chinese","math","English"),grade=c(99,89,100),country="china",class="1" )#创建列表
+print(data) #读取列表
+```
+
+&emsp;&emsp;在上面的示例中，data是一个list对象，内部元素分别存储于名称为“subject”~“class”的4列中。
+
+1）使用length()函数可以获得列表中向量的个数
+```{r,}
+print(length(data))     # 得出列表的长度
+```
+
+2）使用$符号取得列表内对应的成分
+
+访问列表中第二个成分的元素
+```{r,}
+print(data$grade)       # 返回列表中第二个成分的值
+```
+
+访问列表中第一个成分的第一个元素
+```{r,}
+print(data$subject[1])  # 该列表中第一个成分的第一个元素
+```
+
+3）使用[[ ]]符号获取列表内所对应的对象的内容
+```{r,}
+print(data[[1]])        # 访问该列表的第一个成分的值
+```
+# 增加列表向量
+***
+在列表末尾添加一个新的向量Date
+```{r,}
+names(data) #查看当前列表的向量名称
+```
+
+新增加一列列表名称
+```{r,}
+data$Date <- as.Date(rep("2018-6-1",3)) #增加Date列表的内容
+names(data) #查看增加的列表名称
+
+```
+
+访问列表向量内容
+```{r,}
+print(data$Date)  #访问增加的列表向量内容
+```
+
+# 列表合并
+***
+将命名为data的列表与新的列表利用c()函数进行合并
+```{r,}
+dat<-c(data,list(e=c("Geography","Music")))
+print(dat)
+```
+
+# 删除行内元素
+***
+&emsp;&emsp;如果想要删除列表内的成分值，只需将此成分设为NULL。当所删除的成分不是最后一个时，原先后面的成分会往前移动。如下所示：删除第二个成分,则删除后的第三个成分会变成第二个成分，其他以此类推。
+```{r,}
+dat[2]<-NULL #删除列表dat中的第二个成分值
+dat
+```

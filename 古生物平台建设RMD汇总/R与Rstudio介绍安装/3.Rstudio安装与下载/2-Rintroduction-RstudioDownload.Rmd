@@ -1,0 +1,62 @@
+---
+title: "R语言入门"
+output: 
+  html_document:
+    number_sections: TRUE
+    toc: TRUE
+    toc_float: TRUE
+    code_folding: show
+    fig_width: 7
+    fig_height: 4.5
+    theme: united
+    highlight: tango
+---
+
+<font size=4 face="微软雅黑">
+
+# Rstudio安装与下载
+***
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;<span style="color:blue">[Rstudio的官方下载网站:http://www.rstudio.com](http://www.rstudio.com)</span>
+
+&emsp;&emsp;**Step1: Download Rstudio**
+
+</font>
+![ ](D:\TASK\图片\下载Rstudio.png)
+
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;**Step2：select Rstudio**
+</font>
+
+![ ](D:\TASK\图片\免费.png)
+
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;**Step3：选择系统进行版本安装**
+
+
+</font>
+![ ](D:\TASK\图片\Rstudio安装系统.png)
+
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;**Step4：安装完成**
+
+
+</font>
+![ ](D:\TASK\图片\安装完成.png)
+
+#  Rstudio功能键
+***
+<font size=4 face="微软雅黑">
+&emsp;&emsp;Rstudio的功能键较多，对Windows系统、Mac系统下安装的Rstudio在使用中的功能键进行介绍，如下所示：
+
+```{r,echo=FALSE,message=FALSE,warning=FALSE}
+library(readxl)
+library(knitr)          # 加载knitr包，使用kable函数,使得表格更加美观
+R快捷键 = read_excel("D:/TASK/1R语言介绍与安装/Rstudio快捷键.xlsx")   ## 读取原始数据
+kable(head(R快捷键 ,15))
+```
+

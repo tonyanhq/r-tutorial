@@ -1,0 +1,84 @@
+---
+title: "数据结构-数组"
+output: 
+  html_document:
+    number_sections: TRUE
+    toc: TRUE
+    toc_float: TRUE
+    code_folding: show
+    fig_width: 7
+    fig_height: 4.5
+    theme: united
+    highlight: tango
+---
+
+
+<font size=4 face="微软雅黑">
+数组以三维方式组织数据，是矩阵的扩展形式。
+
+
+
+
+
+# 创建和访问数组
+***
+数组通过array函数创建，基本书写格式为：
+array(向量名，维度说明，dimnames=list(维名称列表))
+
+例如：创建一个名为a的数组：
+```{r,}
+a<-(1:20)# 从1到20创建向量
+dim1<-c("R1","R2","R3","R4")  #分别给3个维度命名
+dim2<-c("C1","C2","C3","C4","C5")
+dim3<-c("T1","T2","T3")
+a<-array(a,c(4,5,3),dimnames=list(dim1,dim2,dim3))# 数组由3张4行5列的二维表组成
+a
+```
+
+最终执行显示的数组由3张4行5列的二维表组成
+
+# 数组初始化
+***
+<font size=4 face="微软雅黑">
+
+使用正态分布随机数初始化整个数组，rnorm是生成正态分布的随机数
+
+```{r,}
+X <- array(rnorm(40,10,5),dim=c(5,4,2)) # 由2张表行数为5列数为4的数组组成
+print(X)
+```
+查看矩阵所有元素的总数量
+```{r,}
+print(length(X))  # 对于矩阵length()函数得到的是所有元素的总数量
+```
+查看矩阵的维度
+```{r,}
+dim(X)
+```
+
+# 生成二维数组
+***
+使用dim( )函数建立数组，方法是将一个向量，利用dim()函数转为数组 
+```{r,}
+X <- 1:20        # 从1到20创建向量
+dim(X ) <- c(5,4) # 5行4列的数组
+print(X )
+```
+
+# 数组元素处理
+***
+直接生成数组并初始化每个元素为4.88
+```{r,}
+X <- array(4.88,dim=c(2,2))
+print(X )
+```
+生成一组重复数据。使用常数初始化指定长度的向量
+```{r,}
+X <- rep(1,5) # 生成向量x的元素始终为1且重复5次
+print(X)
+```
+生成向量x的元素始终为China且重复5次
+```{r,}
+X <- rep("China",5)
+print(X)
+```

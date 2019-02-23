@@ -1,0 +1,287 @@
+---
+title: "参数估计-点估计"
+output: 
+  html_document:
+    number_sections: TRUE
+    toc: TRUE
+    toc_float: TRUE
+    code_folding: show
+    fig_width: 7
+    fig_height: 5
+    theme: united
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;我们回想一下，引进统计量的目的在于对感兴趣的问题进行统计推断。而实际中，我们感兴趣的问题多是以分布族中的未知参数或是参数函数的形式出现的，因此，本节我们就讨论一下关于感兴趣参数的估计问题。根据样本来估计总体分布所包含的未知参数，叫作参数估计，参数估计通常有两种形式，一种称为点估计，一种称为区间估计。
+
+#点估计
+
+***
+
+&emsp;&emsp;点估计就是用一个统计量来估计一个未知参数。在这里我们介绍点估计常用的两种方法：矩估计法和极大似然估计法。
+
+<font size=4 face="微软雅黑">
+
+
+##矩法
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;矩法是K.Pearson于1894年基于某些生物学方面的数据并非来自正态分布这一发现而提出的，这种估计方法在实际中有着广泛的应用。矩估计法的主要思想是用样本矩去估计总体矩，我们首先得知道样本矩和总体矩是什么。
+
+&emsp;&emsp;最常用的矩有两种，定义：对于样本$X_1,...X_n$及任意一正整数$k$，我们称$$a_k=\frac{1}{n}\sum_{i=1}^nX_i^k,m_k=\frac{1}{n}\sum_{i=1}^n(X_i-\bar X)^k$$为样本的$k$阶原点矩和$k$阶中心矩。
+
+&emsp;&emsp;而一个随机变量$X$的$k$阶原点矩和中心矩就叫作总体的$k$阶原点矩和中心矩，定义为：$$\mu_k=EX^k,v_k=E(X-\mu_k)^k$$
+
+&emsp;&emsp;对比定义可以发现，样本矩不依赖于总体中的参数，它们是统计量；而总体矩则与分布中的未知参数有关，而在极限情况下，样本矩又是总体矩的一个很好的估计，于是，我们可以利用上述想法来估计总体中的未知参数。
+
+&emsp;&emsp;设总体X的分布中的未知参数为$\theta=(\theta_1,\theta_2,...,\theta_m)'$,并且总体的k阶原点矩存在，我们令总体的k阶原点矩等于样本的k阶原点矩，即$$a_k(\theta_1,\theta_2,...\theta_m)=E(X^k)=\frac{1}{k}\sum\limits_{i=1}^nX_i^k,k=1,2,...m$$&emsp;&emsp;由上式可以得到关于$\theta$的解，此解则可以作为$\theta$的矩估计。
+
+&emsp;&emsp;举一个具体的例子，设总体$X$的均值为$\mu$，方差为$\sigma$，$X_1,...X_n$是来自总体$X$的一个样本，试用矩法估计均值$\mu$和方差$\sigma$。
+
+&emsp;&emsp;计算总体$X$的一阶、二阶原点矩，有$$\alpha_1=E(X)=\mu,\\\alpha_2=E(X^2)=E(X-E(X)+E(X))^2\\=E(X-E(X))^2+(E(X))^2+2E(X-E(X))E(X)\\=E(X-E(X))^2+(E(X))^2=\sigma^2+\mu^2$$
+
+&emsp;&emsp;计算总体的一阶、二阶原点矩，有$$A_1=\frac{1}{n}\sum_{i=1}^nX_i=\bar X,A_2=\frac{1}{n}\sum_{i=1}^nX_i^2$$
+
+&emsp;&emsp;令样本矩和总体矩对应相等，可得到方程组：$$\begin{cases}\mu=\bar X,\\\sigma^2+\mu^2=\frac{1}{n}\sum_{i=1}^nX_i^2\end{cases}$$
+
+&emsp;&emsp;解上述方程组得到均值$\mu$和方差$\sigma^2$的矩估计如下：$$\hat{\mu}=\bar X,\\\hat{\sigma}^2=\frac{1}{n}\sum_{i=1}^nX_i^2-{\bar X}^2=\frac{1}{n}\sum_{i=1}^n(X_i-\bar X)^2$$
+
+&emsp;&emsp;可能会有人想问，为什么方差的矩估计并不等于样本方差$S_n^2$呢？参数的估计方法有很多，之所以用$S_n^2$来定义样本方差，是因为它是好的，是经得起推敲的，那为什么它是好的呢？在后边估计量的优良性准则中会具体讲到。
+ 
+&emsp;&emsp;由于不同分布造成函数f形态各异，因此在R中不可能有固定的R程序来直接得到矩估计结果，只能利用R的计算功能具体问题具体分析。首先介绍几个R中常用的解方程函数，如下表所示
+
+|函数|功能|程序包|
+|-----|:-----:|-----:|
+|uniroot()|求解一元（非线性）方程|stats|
+|multiroot()|给定n个（非线性）方程，求解n个根|rootSolve|
+|uniroot.all()|在一个区间内求解一个方程的多个根|rootSolve|
+|BBsolve()|使用Barzilai-Borwein步长求解非线性方程组|BB|
+
+&emsp;&emsp;其中BBsolve()与给定的参数初值有关，在实际中并不常用，因此这里终点介绍前两个函数的使用方法。首先是解一次方程的函数uniroot()：
+
+```
+uniroot(f, interval, ...,
+        lower = min(interval), upper = max(interval),
+        f.lower = f(lower, ...), f.upper = f(upper, ...),...
+        tol = .Machine$double.eps^0.25, maxiter = 1000, trace = 0)
+```
+
+&emsp;&emsp;其中f是指定所要求解方程的函数；interval是一个数值向量，指定要求解的根的区间范围；或者用lower和upper分别指定区间的两个端点；tol表示所需的精度（收敛容忍度）；maxiter为最大迭代次数。
+
+&emsp;&emsp;如果遇到多元方程的求解，就需要利用rootSolve包的函数multiroot()来解方程组。multiroot()用于对n个非线性方程组求解n个根，其要求完整的雅可比矩阵，采用Newton-Raphson方法。调用格式为
+
+```
+multiroot(f,start,maxiter=100,rtol=1e-6,atol=1e-8,ctol=1e-8,useFortran=TRUE,...)
+```
+&emsp;&emsp;f指定所要求解的函数；由于使用的是牛顿迭代法，因而必须通过start给定根的初始值，其中的name属性还可以标记输出变量的名称；maxiter是允许的最大迭代次数；rtol和atol分别为绝对误差和相对误差，一般保持默认值即可；ctol也是一个用于控制迭代次数的标量，如果两次迭代的最大变化值小于col，那么迭代停止，得到方程组的根。
+
+&emsp;&emsp;接下来用实例说明在R中求矩估计的方法，由于样本分布的多样性，矩估计必须“具体问题具体分析”，并没有一个固定的求解套路。
+
+&emsp;&emsp;例如，已知某种保险产品在一个保单年度内的损失情况如下表所示，其中给出了不同损失次数下的保单数，我们对损失次数的分布进行估计。已知分布类型是Poisson分布，其样本均值即为参数$\lambda$的矩估计。
+
+|损失次数|0|1|2|3|4|5|
+|---|:---:|:---:|:---:|:---:|:---:|---:|
+|保单数|1532|581|179|41|10|4|
+
+```{r}
+num=c(rep(0:5,c(1532,581,179,41,10,4)))#用rep函数生成样本，样本值由0-5个数字构成，函数中第二个向量对应表示每个数字的重复次数
+lambda=mean(num)
+lambda
+```
+
+&emsp;&emsp;根据估计的参数值，画图比较损失次数的估计值和样本值之间的差别
+<font size=4 face="微软雅黑">
+```{r}
+k=0:5
+ppois=dpois(k,lambda)
+poisnum=ppois*length(num)#由possion分布生成的损失次数
+plot(k,poisnum,ylim=c(0,1600))#画图比较，为图形效果更好，用参数ylim设置纵轴的范围，最小值为0，最大值要大于样本的最值，选取1600
+samplenum=as.vector(table(num))#样本的损失次数
+points(k,samplenum,type="p",col=2)
+legend(4,1000,legend=c("num","possion"),col=1:2,pch="o")#设置图例的位置颜色形状和内容
+```
+
+&emsp;&emsp;图中黑点表示样本损失次数实际值，红点表示损失次数估计值。泊松分布只包含一个参数值，所以只需要一阶矩就可以完成估计，参数的个数与需要估计的阶数是对应的。
+
+&emsp;&emsp;涉及多个参数的矩估计问题，解方程组是最大的难点，这时我们需要开发R的计算功能，前面提到的rootSolve包的函数multiroot()用于解方程组。在R中使用它时要注意，multiroot()求解的是函数值为0时方程组的根，所以编写函数function时要注意减去样本均值/方差。下面以均与分布样本x为例具体说明。
+```{r}
+#install.packages("rootSolve")#安装软件包
+x=c(4,5,4,3,9,9,5,7,9,8,0,3,8,0,8,7,2,1,1,2)
+m1=mean(x)#样本均值
+m2=var(x)#样本方差
+model=function(x,m1,m2){
+  c(f1=x[1]+x[2]-2*m1,
+    f2=(x[2]-x[1])^2/12-m2)
+}
+library(rootSolve)#加载软件包
+multiroot(f=model,start=c(0,10),m1=m1,m2=m2)
+
+```
+
+&emsp;&emsp;第一行给出的两个结果，即均匀分布的两个参数值[-0.75,10.25]。
+
+##极大似然法
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;接下来我们介绍另一种点估计方法，极大似然估计法，其原理是认为概率最大的事件最有可能发生。设总体$X$的概率密度函数或分布律为$f(x;\theta)$,$\theta$为未知参数,$X_1,X_2,...X_n$为来自总体$X$的样本，称$L(X;\theta)=L(x_1,x_2,...x_n;\theta)=\prod\limits_{i=1}^nf(x_i,\theta)$为$\theta$的似然函数。若$\theta$的估计$\hat{\theta}(X)$使得似然函数达到最大，则$\hat{\theta}(X)$为$\theta$的极大似然估计。
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;极大似然估计可以通过对似然函数或者对数似然函数求导取极值的方式求得。还是以矩法中的例子为例，求参数的极大似然估计。
+
+&emsp;&emsp;首先，写出正态分布的似然函数为$$L(\mu,\sigma^2;x)=\prod_{i=1}^nf(x_i;\mu,\sigma^2)=(2\pi\sigma^2)^{-n/2}exp[-\frac{1}{2\sigma^2}\sum_{i=1}^n(x_i-\mu)^2]$$&emsp;&emsp;我们要求似然函数最大时所对应的参数估计值，那么，这就是一个求极值的问题，一般我们可以通过求函数导数来确定极值点，但是可以看到似然函数求导复杂，因此我们将问题转化为对对数似然函数求极值。
+
+&emsp;&emsp;写出对数似然函数为$lnL(\mu,\sigma^2;x)=-\frac{n}{2}ln(2\pi\sigma^2)-\frac{1}{2\sigma^2}\sum_{i=1}^n(x_i-\mu)^2$&emsp;&emsp;对对数似然函数求导，可得$$\mu=\frac{1}{n}\sum_{i=1}^nx_i=\bar x,\sigma^2=\frac{1}{n}\sum_{i=1}^n(x_i-\bar x)^2$$
+<font size=4 face="微软雅黑">
+可以看到，对于正态总体，其均值与方差的矩估计和极大似然估计是一样的。
+
+&emsp;&emsp;在R中，计算极值的函数也有很多个，如下表所示
+
+|函数|功能|程序包|
+|---|:---:|---:|
+|optimize()|计算单参数分布的极大似然估计值|stats|
+|optim()|计算多个参数分布的极大似然估计值|stats|
+|nlm()|计算非线性函数的最小值点|stats|
+|nlminb()|非线性最小化函数|stats|
+
+&emsp;&emsp;`optimize()`函数的调用方法是
+
+```
+optimize(f, interval, ..., lower = min(interval), upper = max(interval),
+         maximum = FALSE,
+         tol = .Machine$double.eps^0.25)
+         
+```
+
+&emsp;&emsp;其中`f`是似然函数:`interval`指定参数的取值范围;`lower/upper`分别是参数的下界和上界:`maximum`默认为FALSE，表示求似然函数的极小值，若为TRUE则求极大值:`tol`表示计算的精度。
+
+&emsp;&emsp;`optim()`函数的调用方法是
+```
+optim(par, fn, gr = NULL, ...,
+      method = c("Nelder-Mead", "BFGS", "CG", "L-BFGS-B", "SANN",
+                 "Brent"),
+      lower = -Inf, upper = Inf,
+      control = list(), hessian = FALSE)
+```
+&emsp;&emsp;其中`par`是指参数的迭代初始值，`fn`为似然函数，`method`提供四种计算方法。
+
+&emsp;&emsp;`nlm()`函数的调用方法是
+
+```
+nlm(f, p, ..., hessian = FALSE, typsize = rep(1, length(p)),
+    fscale = 1, print.level = 0, ndigit = 12, gradtol = 1e-6,
+    stepmax = max(1000 * sqrt(sum((p/typsize)^2)), 1000),
+    steptol = 1e-6, iterlim = 100, check.analyticals = TRUE)
+```
+&emsp;&emsp;nlm是非线性最小化函数，仅使用牛顿-拉夫逊算法，通过迭代计算函数的最小值点。一般只需要对前两个参数进行设置：f是需要最小化的函数；p设置参数的初始值。
+
+&emsp;&emsp;在实际应用中，以上三个基本函数在遇到数据量较大或分布较复杂的计算时，往往很难得到估计结果。因此这里着重介绍另一个优化函数`nlminb()`函数。
+```
+nlminb(start, objective, gradient = NULL, hessian = NULL, ...,
+       scale = 1, control = list(), lower = -Inf, upper = Inf)
+```
+&emsp;&emsp;参数start是数值向量，用于设置参数的初始值；objective指定要优化的函数；gradient和hess用于设置对数似然函数的梯度，通常采用默认状态；control是一个控制参数的列表；lower和upper设置参数的下限和上限，如果未指定，则假设所有参数都不受约束。`nlminb()`函数也是非线性最小化函数，但计算能力要比前面几个函数强大得多，一般的优化函数都无法得出计算结果,这时`nlminb()`的强大就体现出来了。我们使用软件包MASS中的数据geyser来证明这一点，该数据集是一个地质学家记录的美国黄石公园内一个名为Old Faithful的喷泉在一年内的喷发数据，其中包括两个变量，分别是泉水持续时间（eruptions）和喷发相隔时间（waiting）。先简单看以下数据的样子。
+```{r}
+#install.packages("MASS")
+library(MASS)
+data(geyser)
+head(geyser)
+```
+
+&emsp;&emsp;对变量waiting进行分布拟合，拟合前要通过直方图了解数据分布的形态。
+```{r}
+attach(geyser)#绑定数据集,以便于直接对变量引用
+hist(waiting,freq=FALSE)#做直方图
+```
+
+&emsp;&emsp;从图中可以看到，数据有两个峰，像是两个分布叠加在一起的，猜测分布是两个正态分布的混合，用如下函数来描述$$f(x)=p\cdot N(x;\mu_1,\sigma_1)+(1-p)\cdot N(x;\mu_2,\sigma_2)$$&emsp;&emsp;为了正确描述分布状态，需要估计出函数中的5个参数：$p,\mu_1,\sigma_1,\mu_2,\sigma_2$，首先写出分布函数的对数似然函数。$$l=\sum_{i=1}^nlog\left\{p\cdot N(x;\mu_1,\sigma_1)+(1-p)\cdot N(x;\mu_2,\sigma_2)\right\}\\=\sum_{i=1}^nlog(f)$$&emsp;&emsp;在R中编写函数时，5个参数都存放在向量para中，由于nlminb是计算极小值的，而求参数要使对数似然函数最大，因此函数function中最后返回的是对数似然函数的相反数。
+```{r}
+ll=function(para){
+  f1=dnorm(waiting,para[2],para[3])
+  f2=dnorm(waiting,para[4],para[5])
+  f=para[1]*f1+(1-para[1])*f2
+  ll=sum(log(f))
+  return(-ll)
+}
+```
+
+&emsp;&emsp;接下来做参数估计，使用nlminb之前最大的要点是确定初始值，初始值越接近真实值，计算的结果才能越精确。猜想数据的分布是两个正态的混合，概率p直接用0.5做初值即可，通过直方图中两个峰对应的x轴数值（大概是50和80），就可以将初值设定为$\mu_1,\mu_2$。而概率p处于（0，1）区间内，参数$\sigma_1,\sigma_2$是正态分布的标准差，必须大于0，所以通过lower和upper两个参数进行一定的约束。
+
+```{r}
+geyser.est=nlminb(c(0.5,50,10,80,10),ll,lower=c(0.0001,-Inf,0.0001,-Inf,0.0001),upper=c(0.9999,Inf,Inf,Inf,Inf))#设定初值和上下限
+options(digits=3)#控制小数位数为3
+geyser.est$par#查看拟合的参数结果
+```
+```{r}
+p=geyser.est$par[1]
+mu1=geyser.est$par[2]
+sigma1=geyser.est$par[3]
+mu2=geyser.est$par[4]
+sigma2=geyser.est$par[5]
+x=seq(40,120)
+#将估计的参数函数代入原密度函数
+f=p*dnorm(x,mu1,sigma1)+(1-p)*dnorm(x,mu2,sigma2)
+hist(waiting,freq=F)#作直方图
+lines(x,f)#画出拟合曲线
+```
+
+&emsp;&emsp;从图形效果看，nlminb函数可以很好地对混合分布作极大似然估计，即使参数有5个之多，也能准确地给出估计结果。
+
+#估计量的优良性准则
+
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;从上述的估计方法中我们可以看出，对于同一个问题，所用方法不同，得到的估计也可能不同，那我们如何选择呢？这就涉及选择准则问题。衡量一个点估计量好坏的标准有很多，比较常见的有：无偏性、有效性和一致性。
+
+***
+##无偏估计
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;由于抽样具有随机性，每次抽出的样本一般都不会相同，根据样本值得到的点估计的值也不尽相。单凭一次抽样的样本是不具有说服力的，必须要通过多次抽样的样本来衡量。因此，我们最容易想到的就是，经过多次抽样后，将所有的点估计值平均起来，这个平均值应该和总体参数一样，这就是所谓的无偏性。
+
+&emsp;&emsp;一个参数估计量具有无偏性，就把这个估计量叫做这个参数的无偏估计。无偏估计的定义是：若估计量$\hat{\theta}(X)$的数学期望$E(\hat{\theta})$存在，且对于任意$\theta\in\Theta$有$E(\hat{\theta})=\theta$，则称$\hat{\theta}(X)$为$\theta$的无偏估计。
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;现在我们来看看来自正态分布总体的样本的参数矩估计是否具有无偏性。
+$$E(\hat \mu)=E(\bar X)\\=E(\frac{1}{n}\sum_{i=1}^nX_i)\\=\frac{1}{n}\sum_{i=1}^nE(X_i)\\=\bar X=\hat \mu$$$$E(\sigma^2)=E[\frac{1}{n}\sum_{i=1}^n(x_i-\bar X)^2]\\=E[\frac{1}{n}\sum_{i=1}^nX_i^2-\frac{2}{n}\sum_{i=1}^n\bar XX_i+\frac{1}{n}\sum_{i=1}^n\bar X^2]\\=E[\frac{1}{n}\sum_{i=1}^nX_i^2-\bar X^2]\\=\frac{1}{n}\sum_{i=1}^nE(X_i^2)-E(\bar X^2)$$
+
+又因为$E(X_i^2)=var(X_i)+[E(X_i)]^2=\sigma^2+\mu^2$,$E(\bar{X^2})=var(\bar X)+[E(\bar X)]^2=\frac{\sigma^2}{n}+\mu^2$
+
+则得到$$E(\hat{\sigma^2})=\sigma^2+\mu^2-(\frac{\sigma^2}{n}+\mu^2)=\frac{n-1}{n}\sigma^2\ne \sigma^2$$
+
+&emsp;&emsp;可见，方差的矩估计不是无偏的，而很容易验证的是，样本方差是无偏的。
+
+##有效性
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;在许多情况下，总体参数$\theta$的无偏估计量不唯一。那么，如何衡量一个参数的两个无偏估计量哪个更好呢？一个重要标准就是观察它们谁的取值更集中于待估参数的真值附近，即哪一个估计量的方差更小，而这就是有效性的概念。
+
+&emsp;&emsp;设$\hat{\theta_1}=\hat{\theta_1}(X)$与$\hat{\theta_2}=\hat{\theta_2}(X)$都是$\theta$的无偏估计，若$Var(\hat{\theta_1})\leq Var(\hat{\theta_2})$，即$\hat{\theta_1}$的方差比$\hat{\theta_2}$的方差小，则称$\hat{\theta_1}=\hat{\theta_1}(X)$比$\hat{\theta_2}=\hat{\theta_2}(X)$有效。
+
+&emsp;&emsp;考察所有无偏估计量，如果其中存在一个估计量$\hat\theta$的方差最小，则此估计量最好，并称此估计量为$\theta$的最小方差无偏估计。
+<font size=4 face="微软雅黑">
+
+##相合估计（一致性）
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;无偏估计和有效估计都是针对固定样本容量$n$而讨论估计的性质。实际上，估计的大样本性质也是人们非常关心的一个问题，估计量的相合性就是大样本情况下的一种考量。
+
+&emsp;&emsp;设$\hat{\theta}=\hat{\theta}(X)$为未知参数$\theta$的估计量，若对于任意$\theta\in\Theta$，当$n$趋于无穷大时，时，$\hat{\theta}(X)$依概率收敛于$\theta$。即对任意$\varepsilon>0$,有$$\lim_{n \to \infty}P{(|\hat{\theta}-\theta|<\varepsilon)}=1$$则称$\hat{\theta}(X)$为$\theta$相合估计量或一致估计量。
+
+&emsp;&emsp;可以看出，估计量的相合性指的是，随着样本数量的增加，参数估计值越精确可靠，尤其是，当$n\to\infty$时，估计值与参数真值几乎完全一致。
+
+#参考文献
+<font size=4 face="微软雅黑">
+
+***
+[1]薛毅. 统计建模与R软件[M]. 清华大学出版社, 2007.
+
+[2]李贤平. 基础概率论[M]. 高等教育出版社,2010.
+
+[3]王兆军. 数理统计教程[M]. 高等教育出版社,2014.
+<font size=4 face="微软雅黑">

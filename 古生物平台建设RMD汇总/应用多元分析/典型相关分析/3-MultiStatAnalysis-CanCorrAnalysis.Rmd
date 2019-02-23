@@ -1,0 +1,144 @@
+---
+title: "应用多元统计-典型相关"
+output: 
+  html_document:
+    number_sections: TRUE
+    toc: TRUE
+    toc_float: TRUE
+    code_folding: show
+    fig_width: 7
+    fig_height: 5
+    theme: united
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+<font size=4 face="微软雅黑">
+&emsp;&emsp;典型相关分析是研究两组变量之间相关关系的一种统计方法。它能够有效地揭示两组随机变量之间的相互线性依赖关系。
+<font size=4 face="微软雅黑">
+
+#基本理论
+<font size=4 face="微软雅黑">
+
+***
+&emsp;&emsp;在实际问题中，经常遇到要研究一部分变量与另一部分变量之间的相互关系。例如在地质学中，为研究岩石形成的成因关系，考察岩石的化学成分与其周围岩化学成分的相关性。肯定有人会有疑问，考察变量相关性用相关系数或者相关阵就可以了呀，为什么要用典型相关分析？
+
+&emsp;&emsp;相关系数和相关阵考察的是两个变量之间，或者多个变量之间的相关性，但典型相关分析的对象是两组变量。下面我们给出典型相关分析的定义：一般地，假设有两组随机变量$X_1,...X_p$和$Y_1,...Y_q$，研究它们的相关关系，当$p>1,q>1$时，采用类似主成分分析的方法，找出第一组变量的线性组合$U$和第二组变量的线性组合$V$，即$$U=a_1X_1+a_2X_2+...+a_pX_p,\\V=b_1Y_1+b_2Y_2+...+b_qY_q,$$&emsp;&emsp;于是将研究两组变量的相关性问题转化成研究两个变量的相关性问题，并且可以适当地调整相应的系数$a,b,$使得变量$U,V$之间的相关性达到最大，称这种相关为典型相关，基于这种原则的分析方法称为典型相关分析。
+
+#总体典型相关
+
+&emsp;&emsp;设$X=(X_1,X_2,...X_p)',Y=(Y_1,Y_2,...Y_q)'$为随机向量，用$X$和$Y$的线性组合$a'X$和$b'Y$之间的相关来研究$X$与$Y$之间的相关，并希望找到$a$与$b$，使$\rho(a'X,b'Y)$最大。
+
+&emsp;&emsp;根据相关系数的定义得到$$\rho(a'X,b'Y)=\frac{cov(a'X,b'Y)}{\sqrt{var(a'X)}\sqrt{var(b'Y)}}$$
+
+&emsp;&emsp;设$X=(X_1,X_2,..X_p)',Y=(Y_1,Y_2,...Y_q)$，$p+q$维随机向量$\begin{pmatrix}X\\Y\end{pmatrix}$的均值为0，协方差阵$\Sigma$正定。若存在$a_1=(a_{11},a_{12},...a_{1p})',b_1=(b_{11},b_{12},...b_{1q})'$使得$\rho(a_1'X,b_1'Y)$是约束问题$$\max\rho(a'X,b'Y),\\s.t.var(a'X)=1\\var(b'Y)=1$$目标函数的最大值，则称$U_1=a_1'X,V_1=b_1'Y$为$X,Y$的第1组典型变量，称它们之间的相关系数$\rho(U_1,V_1)$为第1典型相关系数。
+
+&emsp;&emsp;如果存在$a_k=(a_{k1},a_{k2},...a_{kp})',b_k=(b_{k1},b_{k2},...b_{kq})'$使得
+* $a_kX',b_k'Y$和前面的$k-1$对典型变量都不相关；
+* $var(a_k'X)=1$,$var(b_k'Y)=1$;
+* $a_k'X$与$b_k'Y$相关系数最大。
+
+&emsp;&emsp;则称$U_k=a_k'X,V_k=b_k'Y$为$X,Y$的第$k$组典型变量，称它们之间的相关系数为第$k$典型相关系数。
+
+<font size=4 face="微软雅黑">
+
+#样本典型相关
+***
+
+<font size=4 face="微软雅黑">
+&emsp;&emsp;在实际中，总体的均值向量和协方差阵通常是未知的，因而无法求得总体的典型变量和典型相关系数，因此需要根据样本对$\Sigma$进行估计。
+
+&emsp;&emsp;已知总体$Z$的$n$次观测数据$$Z_{(i)}=\begin{pmatrix}X_{(i)}\\Y_{(i)}\end{pmatrix}_{(p+q)\times 1},i=1,2,...n$$于是样本资料可以写为$$\begin{bmatrix}x_{11}&x{12}&...&x_{1p}&y_{11}&y_{12}&...&y_{1q}\\x_{21}&x_{22}&...&x_{2p}&y_{21}&y_{22}&...&x_{2q}\\\vdots&\vdots&&\vdots&\vdots&\vdots&&\vdots\\x_{n1}&x_{n2}&...&x_{np}&y_{n1}&y_{n2}&...&y_{nq}\end{bmatrix}$$
+
+&emsp;&emsp;假设$Z\sim N_{p+1}(\mu,\Sigma)$，则协方差阵的极大似然估计为$$\hat\Sigma=\frac{1}{n}\sum_{i=1}^n(Z_{(i)}-\overline{Z})(Z_{(i)}-\overline{Z})'$$其中，$\overline{Z}=\frac{1}{n}\sum_{i=1}^nZ_{(i)}$，称矩阵$\hat \Sigma$为样本协方差阵。
+
+
+#典型相关分析的计算
+
+*** 
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;令$Z=\begin{pmatrix}X\\Y\end{pmatrix}$，则有$$E(Z)=0,var(Z)=\Sigma=\begin{bmatrix}\Sigma_{11}&\Sigma_{12}\\\Sigma_{21}&\Sigma_{22}\end{bmatrix}$$令$U=a'X,V=b'Y$,因此，求解第一对典型变量和典型相关系数的约束化问题就等价于$$\max \rho(U,V)=\alpha'\Sigma_{12}\beta,\\s.t.\alpha'\Sigma_{11}\alpha=1\\\beta'\Sigma_{22}\beta=1$$这是一个典型的约束优化问题，这里采用约束问题的一阶必要条件进行求解。构造上述约束的$Lagrange$函数$$L(\alpha,\beta,\lambda)=\alpha'\Sigma_{12}\beta-\frac{\lambda_1}{2}(\alpha'\Sigma_{11}\alpha)-\frac{\lambda_2}{2}(\beta'\Sigma_{22}\beta-1)$$其中，$\lambda=(\lambda_1,\lambda_2)'$为$Lagrange$乘子
+
+&emsp;&emsp;由约束问题的一阶必要条件$$\nabla_{\alpha}L=0,\nabla_{\beta}L=0,\alpha'\Sigma_{11}\alpha=1,\beta'\Sigma_{22}\beta=1$$得到如下方程$$(1)\Sigma_{12}\beta-\lambda_1\Sigma_{11}\alpha=0\\(2)\Sigma_{21}\beta-\lambda_2\Sigma_{22}\beta=0\\(3)\alpha'\Sigma_{11}\alpha=1\\(4)\beta'\Sigma_{22}\beta=1$$
+
+&emsp;&emsp;接下来求解该方程，在式(1)左乘$\alpha'$，式(2)左乘$\beta'$，再利用式(3)和式(4)，得到$\lambda_1=\lambda_2=\lambda$。由于$\Sigma\ne 0$，所以可以得到
+$$\lambda^2\alpha=\Sigma_{11}^{-1}\Sigma_{12}\Sigma_{22}^{-1}\Sigma_{21}\alpha=M_1\alpha,\\\lambda^2\beta=\Sigma_{22}^{-1}\Sigma_{21}\Sigma_{11}^{-1}\Sigma_{12}\beta=M_2\beta,$$
+
+&emsp;&emsp;可以看到，$\lambda^2$是矩阵$M_1,M_2$的特征值，$\alpha,\beta$分别是特征值所对应的特征向量
+
+&emsp;&emsp;现在，优化问题转为了求$M_1orM_2$的最大特征值和相应满足$||\Sigma_{11}^{1/2}=1||,||\Sigma_{22}^{1/2}||=1$的特征向量的问题。
+
+&emsp;&emsp;又由于我们已经给出了协方差阵的估计方法，所以，关于样本典型变量的计算，只需要将矩阵$M_1,M_2$中的$\Sigma_{11},\Sigma_{12},\Sigma_{21},\Sigma_{22}$换成$\hat\Sigma_{11},\hat\Sigma_{12},\hat\Sigma_{21},\hat\Sigma_{22}$即可，因此，计算过程为：
+令$M_1=\Sigma_{11}^{-1}\Sigma_{12}\Sigma_{22}^{-1}\Sigma_{21}$;
+计算$M_1$的全部特征值$\lambda_1^2\ge\lambda_2^2\ge...\ge\lambda_m^2$，其中$m=min(p,q)$和相应的特征向量$\alpha_k$令$$\beta_k=\Sigma_{22}^{-1}\Sigma_{21}\alpha_k\\\alpha_k=\alpha_k/\sqrt{\alpha'\hat\Sigma_{11}\alpha_k}\\b_k=\beta_k/\sqrt{\beta'\hat\Sigma_{22}\beta_k}$$，则$\lambda_k=\sqrt{\lambda_k^2}$为第$k$对样本典型相关系数，$U_k=\alpha_k'X,V_k=b_k'Y$为第$k$对样本典型变量。
+
+#典型相关系数的显著性检验
+
+***
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;与前面的主成分分析、因子分析类似，相关分析也使用降维的方法来处理数据，但是这里存在一个问题，就是选择多少对典型变量？要回答这个问题，就需要作典型相关系数的显著性检验。检验分为两步：第一步，检验全体相关系数是否都为0；第二步检验单个相关系数是否为零。
+
+##全部总体典型相关系数均为0的检验
+
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;设$\begin{pmatrix}X\\Y\end{pmatrix}\sim N_{p+q}(\mu,\Sigma),\Sigma>0$$S$为样本的协方差矩阵，$n$为样本个数，且$n>p+q$考虑假设检验问题$$H_0:\rho_1=\rho_2=...=\rho_m=0,H_1:至少有一个\rho_i\ne 0$$
+
+&emsp;&emsp;若检验接受$H_0$，则认为讨论两组变量之间的相关性没有意义；若检验拒绝$H_0$，则认为第一对典型变量是显著的。构造似然比统计量$$\Lambda_1=\prod_{i=1}^m(1-r_i^2)$$对于充分大的$n$，当$H_0$成立时，统计量$$Q_1=-[n-\frac{1}{2}(p+q-3)]ln \Lambda_1$$近似服从自由度为$pq$的$\chi^2$分布。在给定的显著性水平$\alpha$下，若$Q_1\ge\chi_{\alpha}^2(pq)$，则拒绝原假设$H_0$，认为典型变量$U_1$与$V_1$之间相关性显著；否则认为第一典型相关系数不显著。这种情况下，就没有必要作典型相关分析了。
+
+##部分总体典型相关系数均为0的检验
+
+<font size=4 face="微软雅黑">
+&emsp;&emsp;假设前$k$个典型相关系数是显著的，现要检验第$k+1$个典型相关系数是否显著，则作如下检验
+$$H_0:\rho_{k+1}=\rho_{k+2}=...=\rho_m=0,H_1:至少有一个\rho_i不为0$$其检验统计量为$$\Lambda_{k+1}=\prod_{i=k+1}^m(1-r_i^2)$$对于充分大的$n$，当$H_0$为真时，统计量$$Q_{k+1}=-[n-k-\frac{1}{2}(p+q+3)+\sum_{i=1}^kr_i^{-2}ln \Lambda_{k+1}]$$近似服从自由度为$(p-k)(q-k)$的$\chi^2$分布，在给定显著性$\alpha$下，若$Q_{k+1}\ge \chi_{\alpha}^2((p-k)(q-k))$，则拒绝原假设$H_0$，认为第$k+1$个典型相关系数$\rho_{k+1}$是显著的；否则认为典型相关系数不显著，那么典型变量就只取到$k$为止。
+
+#R语言实现
+<font size=4 face="微软雅黑">
+
+***
+&emsp;&emsp;在R语言中用`cancor()`函数作典型相关分析，我们用一个例子来具体运用该函数。
+&emsp;&emsp;例如，某健身俱乐部对20名中年人测量了3个生理指标：体重（$X_1$）,腰围（$X_2$）,脉搏（$X_3$）以及3个训练指标：引体向上（$Y_1$）,起坐次数（$Y_2$）,跳跃次数（$Y_3$），对这组数据进行典型相关分析过程如下：
+<font size=4 face="微软雅黑">
+
+```{r message=FALSE, warning=FALSE}
+test<-data.frame(
+      x1=c(191,193,189,177,176,169,154,193,176,156,189,162,182,167,154,166,247,202,157,138),
+      x2=c(36,38,35,38,31,34,34,36,37,33,37,35,36,34,33,33,46,37,32,33),
+      x3=c(50,58,46,56,74,50,64,46,54,54,52,62,56,60,56,52,50,62,52,68),
+      y1=c(5,12,13,8,15,17,14,16,4,15,2,12,4,6,17,13,1,12,11,2),
+      y2=c(162,101,155,101,200,120,215,70,60,225,110,105,101,125,251,210,50,210,230,110),
+      y3=c(60,101,58,38,40,38,105,31,25,73,60,37,42,40,250,115,50,120,80,43)
+) # 将样本以数据框的形式录入
+test<-scale(test) # 为了消除数据量纲影响，对数据作标准化
+ca<-cancor(test[,1:3],test[,4:6]) # 对标准后的数据进行典型相关分析,代码表示分别提取1：3列和4：6列
+ca#显示典型相关分析各项结果
+
+```
+
+&emsp;&emsp;结果中，cor代表典型相关系数；xcorf代表数据x的典型载荷,ycorf代表数据y的典型载荷；xcenter代表数据x的中心，ycenter代表数据y的中心;根据计算结果得到$$\begin{cases}u_1=-0.166x_1+0.354x_2+0.001x_3\\u_2=-0.151x_1+0.156x_2+0.211x_3\\u_3=0.386x_1-0.209x_2+0.132x_3\end{cases}$$
+$$\begin{cases}v_1=-0.0932y_1-0.236y_2+0.151y_3\\v_2=-0.261y_1+0.235y_2-0.023y_3\\v_3=-0.012y_1+0.075y_2-0.269y_3\end{cases}$$
+&emsp;&emsp;相应的相关系数为$$\rho(u_1,v_1)=0.796,\rho(u_2,v_2)=0.201,\rho(u_3,v_3)=0.0726$$
+
+&emsp;&emsp;下面计算样本数据在典型变量下的得分，我们知道$U=AX,V=BY$，所以R代码为
+```{r message=FALSE, warning=FALSE}
+U=as.matrix(test[,1:3])%*%ca$xcoef#%*%运算符表示矩阵相乘
+V=as.matrix(test[,4:6])%*%ca$ycoef
+plot(U[,1],V[,1],xlab="U1",ylab="V1")#画出以U1,V1为坐标的数据散点图
+plot(U[,3],V[,3],xla="U3",ylab="V3")
+
+```
+
+&emsp;&emsp;可以看出，第一幅图的点基本上在一条直线附近，而第二幅图的点，基本上分布很散，原因在于，第一幅图是第一典型变量的散点图，其相关系数为0.796，接近于1；而第二幅图画的是第三典型变量的散点图，其相关系数为0.0726，接近于0，所以很分散。
+#参考文献
+<font size=4 face="微软雅黑">
+
+***
+[1]薛毅. 统计建模与R软件[M]. 清华大学出版社, 2007.
+<font size=4 face="微软雅黑">

@@ -1,0 +1,144 @@
+---
+title: "数据结构-数据框"
+output: 
+  html_document:
+    number_sections: TRUE
+    toc: TRUE
+    toc_float: TRUE
+    code_folding: show
+    fig_width: 7
+    fig_height: 4.5
+    theme: united
+    highlight: tango
+---
+<font size=4 face="微软雅黑">
+
+数据框用于组织多个存储类型不相同的变量，数据框是由一系列的列向量组成，可以看做是矩阵的扩充。
+
+# 建立数据框
+***
+```{r,}
+G.goods <-c("A","B","C")
+G.price <-c(40.40,40.56,23.02)
+G.type <-c("优","良","中")
+```
+
+&emsp;*G.goods:商品的字符向量
+
+&emsp;*G.price:价格的数值向量
+
+&emsp;*G.type：种类的字符向量
+
+* R的数据框的基本语句为：data.frame(域名1=向量名1，域名2=向量名2，…）
+```{r,}
+df<- data.frame(G.goods=c("A","B","C"),G.price=c(40.40,40.56,23.02),G.type=c("优","良","中"))
+df
+```
+通过行列号访问数据框的第一行
+```{r,}
+print(df[1,])   
+```
+通过行列号访问数据框的第二列
+```{r,}
+print(df[,2]) 
+```
+用列名称更好、更直观的访问数据框
+```{r,}
+print(df$G.goods) 
+```
+
+# 数据框更改
+***
+1）更改1列名称
+
+将第二列名称G.price更改为price
+```{r,}
+names(df)[2] <-"price"
+df
+```
+
+2）更改全部列名
+
+更改数据框df列名（全部更改），分别改为"goods","price","type"。
+```{r,}
+names(df) <-c("goods","price","type")
+df
+```
+
+# 数据框的查询
+***
+1）查看各个域名
+```{r,}
+names(df) # 查询数据框的列名
+```
+2）查看goods、type（商品的名称和种类）
+```{r,}
+df[,"goods"] # 商品A B C
+```
+访问数据框df信息
+```{r,}
+df[,"type"]  # 种类优 良 中
+```
+
+3）通过符号[ ]查看数据
+
+[ ]里逗号前表示查看行数据
+
+如：[1,]表示查看第一行的数据，同理：[3，]表示查看第三行数据
+
+```{r,}
+df[1, ] # 查看A物品的信息
+```
+执行后结果显示第1行价格为40.4的A物品种类为优。
+```{r,}
+df[2, "type"] # 查看B物品的（type）种类
+```
+表示查看第2行，type列的信息为良
+
+# 数据框数据的增加
+***
+1.列数据cbind()
+
+例:给数据框新增加一列名为amount的数据，amount列数据分别为33,24,45。
+```{r,}
+amount <-c(33,24,45)# amount:数量的数值向量
+A.df <-data.frame(amount) # 将新增的amount变成数据框A.df
+Add.df<- cbind(df,A.df)# 将原先数据数据框df与A.df合并
+Add.df
+```
+str()查看数据框的结构
+```{r,}
+str(Add.df)
+```
+&emsp;&emsp;通过str()查看到goods和type本身为字符型变量，但在建立数据框时变成了因子型变量。因此对其进行更改。两种方法更改：
+
+1)as.存储类型名（数据对象名）
+
+```{r,}
+A.df <-data.frame(amount) # 将新增的amount变成数据框A.df
+Add.df<- cbind(df,A.df)# 将原先数据数据框df与A.df合并
+str(Add.df)
+```
+查看存储类型
+```{r,}
+Add.df$goods=as.character(Add.df$goods)
+Add.df$type =as.character(Add.df$type )
+str(Add.df)
+```
+
+2)增加参数“stringsAsFactors=FALSE”
+
+&emsp;&emsp;stringsAsFactors = FALSE，意味着，在读入数据时，遇到字符串后，不将其转换为factors，仍然保留为字符串格式。
+```{r,}
+df<- data.frame(goods=c("A","B","C"),price=c(40.40,40.56,23.02),type=c("优","良","中"),amount=c(33,24,45))  #R默认情况下为因子
+str(df)
+df<- data.frame(goods=c("A","B","C"),price=c(40.40,40.56,23.02),type=c("优","良","中"),amount=c(33,24,45),stringsAsFactors=FALSE) #加入参数后变为字符型
+str(df)
+```
+
+2.行数据增加
+使用rbind()函数增加。例如：假使有商品“D”，价格“40.5”，种类“优”，数量“48”，加入数据框，如下：
+```{r,}
+NEW.df <-rbind(Add.df,c("D","40.5","优","48"))
+NEW.df
+```

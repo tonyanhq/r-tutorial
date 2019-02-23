@@ -1,0 +1,334 @@
+---
+title: "特征工程(一)"
+output: 
+  html_document:
+    number_sections: TRUE
+    toc: TRUE
+    toc_float: TRUE
+    code_folding: show
+    fig_width: 7
+    fig_height: 4.5
+    theme: united
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+
+# 简介
+<font size=4 face="微软雅黑">
+
+***
+&emsp;&emsp;在开始特征工程之前呢，请先思考一下到底是什么决定了模型的好坏？是一份高大上的代码？是一个复杂的算法？是拥有一份整齐的数据？还是……？都不是！
+
+&emsp;&emsp;在数据科学界流传着一句经久不衰的话：数据和特征决定了机器学习的上限，而模型和算法只是逼近这个上限而已。那为什么决定性因素是特征工程呢？其实很简单，特征工程的目的就是最大限度地从原始数据中获取最重要的特征代入算法，从而训练出一个最好的模型，正所谓"Garbage in, garbage out"。不过呢，做好特征工程并非易事，业务、经验等均决定了特征工程的好坏，很多情况下还得就事论事。
+
+&emsp;&emsp;特征工程主要包括两大部分：数据清洗、特征选择和降维(后面章节有降维的详解，在这里我就不重复了)，其中每部分均包含了很多内容，下面我就介绍一些常用的内容供大家学习和入门。
+
+</font>
+
+
+# 数据清洗
+<font size=4 face="微软雅黑">
+
+***
+&emsp;&emsp;在工作中大部分的数据还是非常糟糕的，缺失值、异常值、数据维度过大都是经常发生的，这些问题在很大可能会严重影响到模型的质量和数据挖掘的效率，所以数据清洗是必不可缺的操作。
+
+</font>
+
+
+## 缺失值识别和处理
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;在任何规模的项目中，数据都可能由于未作答问题、设备故障或误编码数据的缘故而不完整。在R中，缺失值以符号 NA(Not Available) 表示。
+
+&emsp;&emsp;缺失值不仅会在前期的探索性数据分析中产生负面影响，而且还可能导致部分模型无法构建，从而导致整个建模挖掘过程不能够完成。所以说缺失值对于整个流程的影响还是挺大的，我们必须得进行识别并进行相应的处理。
+
+</font>
+
+### 缺失值识别 {.tabset .tabset-fade .tabset-pills}
+<font size=4 face="微软雅黑">
+
+在R中有很多中识别缺失值的方法，它们各有千秋。下面我就给大家演示几种常用的缺失值识别的方法：
+
+</font>
+
+#### dataset
+<font size=4 face="微软雅黑">
+
+在进行缺失值识别之前，先获取R中VIM程序包里面自带的sleep数据集，并使用DT程序包中的 **datatable()**函数展示我们后续需要的数据。
+
+</font>
+
+<font size=2 face="微软雅黑">
+
+<span style="color:red">注意：如果没有下载VIM和DT程序包，请先使用`install.packages("VIM")`和`install.packages("DT")`两个命令下载两个程序包之后再加载。</span>
+
+</font>
+
+```{r}
+
+# install.packages("VIM")      # 下载VIM程序包
+# install.packages("DT")       # 下载DT程序包
+library(VIM)                   # 加载VIM程序包，使用sleep数据
+library(DT)                    # 加载DT程序包，使用datatable()函数
+
+data("sleep", package = "VIM") # 获取VIM程序包中的sleep数据集
+datatable(sleep)               # 展示sleep数据集
+
+```
+
+#### anyNA()
+<font size=4 face="微软雅黑">
+
+**anyNA()**函数是R中快速识别数据集中是否存在NA的最简单的方法，可以作用于任何类型的数据集。直接把数据集代入函数，便可返回TURE(含有缺失值)或FALSE(不含缺失值)。
+
+</font>
+
+```{r}
+
+anyNA(sleep)
+
+```
+
+<font size=4 face="微软雅黑">
+
+上面的代码返回的结果是TURE，说明该数据集存在缺失值。但是并不知道数据中哪个位置是缺失值，也不知道还有多少个缺失值，下面我们会对缺失值逐步深入的探索。
+
+</font>
+
+#### is.na()
+<font size=4 face="微软雅黑">
+
+**is.na()**函数也是R中常用的判断是否存在缺失值的函数，同样可以作用于任何数据类型。相对于**anyNA()**函数而言，该函数会在缺失值所在的位置会返回TRUE，否则返回FALSE。为了节省篇幅，我们只去探索前五行数据含有缺失值的情况。
+
+</font>
+
+```{r}
+
+is.na(sleep[1:5, ])
+
+```
+
+<font size=4 face="微软雅黑">
+
+根据返回的结果，可以看出前五行数据中存在缺失值。但是对于含有少量缺失值的大数据而言，就不能很轻易地发现TRUE了，即不能轻易判断有无缺失值的存在。针对这个缺点，我们可以在外层嵌套一个**sum()**函数对返回的结果求和(TRUE=1,FALSE=0)，这样就可以根据返回的数值大小来判断含有缺失值的个数。
+
+</font>
+
+```{r}
+
+sum(is.na(sleep))
+
+```
+
+<font size=4 face="微软雅黑">
+
+嵌套函数之后，返回的结果是38，即sleep数据集中含有38个缺失值。
+
+</font>
+
+#### complete.case()
+<font size=4 face="微软雅黑">
+
+**complete.case()**函数也可以进行缺失值的识别，但是其与**is.na()**函数的识别方式有所不同。
+
+* **is.na()**函数针对的是缺失值的具体位置进行识别，而**complete.case()**函数是针对的数据的行
+* **is.na()**函数在缺失值所在的位置返回TRUE，而**complete.case()**函数在含有缺失值的行返回 FALSE
+
+</font>
+
+```{r}
+
+complete.cases(sleep)
+
+```
+
+<font size=4 face="微软雅黑">
+
+此函数返回的62个逻辑向量分别代表数据中每一个观测是否完整(FALSE表示不完整,TRUE表示完整)。从返回结果的第一个和第二个逻辑向量中可以看出：数据的第一行不完整(含有缺失值)，第二行完整(没有缺失值)。对照先前**is.na()**返回的结果，发现对于缺失值的识别结果是一致的。
+
+</font>
+
+#### aggr()
+<font size=4 face="微软雅黑">
+
+上面介绍了三种缺失值识别的方法，这三种方法虽然可以轻松地识别缺失值，但是并不能直接返回数据集中每列各含有多少个缺失值。而在工作中一般都是需要去了解数据集中每列数据的缺失情况，下面就要介绍VIM程序包中的**aggr()**函数，该函数不仅可以返回每列含有缺失值的个数，还可以可视化展示，更加生动形象。
+
+在此函数中，主要使用以下5个参数：
+
+aggr(x, delimiter = NULL, plot = TRUE, ...)
+
+* x：一个向量、矩阵或者数据框
+* plot：控制返回的结果是否使用图形。参数值可以是TRUE或FALSE，默认plot = TRUE
+* prop：控制左图中返回缺失值的个数或者比例。参数值可以是TRUE或FALSE，默认prop = TRUE
+* numbers：控制右图中是否显示具体数值。参数值可以是TRUE或FALSE，默认number = FALSE
+* combined：控制左图是否与右图合并。参数值可以是TRUE和FALSE，默认combined = FALSE
+
+</font>
+
+```{r}
+
+aggr(x = sleep, plot = FALSE) # 查看数据每列含有缺失值的个数
+
+```
+
+<font size=4 face="微软雅黑">
+
+从返回的结果中可以看出：NonD、Dream、Sleep、Span 和 Gest 这5列中分别含有14、12、4、4、4个缺失值。
+
+</font>
+
+```{r}
+
+# 可视化数据中每列含有缺失值的个数
+aggr(x = sleep, plot = TRUE, prop = FALSE, numbers = TRUE, combined = TRUE) 
+
+```
+
+<font size=4 face="微软雅黑">
+
+这次返回的是一个可视化的结果：左图横轴是各个变量名，纵轴是缺失值的个数；右图是一副合并的图，上方是左图，图右边的数字代表其所对应的色块代表的缺失值的个数。
+
+</font>
+
+
+### 缺失值处理 {.tabset .tabset-fade .tabset-pills}
+<font size=4 face="微软雅黑">
+
+上面我们介绍了三种缺失值识别的方法，接下来就该对其进行相应处理了。常用的缺失值的处理方法有直接剔除、简单方法(均值、中位数、特定值等)填补、高级方法(多重插补、rpart 插补、knn插补等)进行填补。以上提到的方法也只是其中的一部分，并且它们各有自己适用的情况，并没有严格上的最优方法。
+
+</font>
+
+<font size=2 face="微软雅黑">
+
+<span style="color:red">注意：以下仅仅是为了演示缺失值处理的方式，并不考虑处理意义。</span>
+
+</font>
+
+#### na.omit()
+<font size=4 face="微软雅黑">
+
+**na.omit()**函数可以说是最简单的处理缺失值的方法，作用就是直接剔出含有缺失值的行。主要适用于样本量足够和剔除后不会引入偏差。优点就是简单方便，缺点就是可能会剔除关键的行，从而减少了数据的主要信息。
+
+</font>
+
+```{r}
+
+datatable(na.omit(sleep)) # 直接删除含有缺失值的行，并展示返回的数据
+
+```
+
+#### impute()
+<font size=4 face="微软雅黑">
+
+对缺失值进行简单填补时，一般采用Hmice程序包中的**impute()**函数。简单的填补方法包括均值、中位数、特定值填补等方法，这些方法同样相对简单。主要适用于需要填补的自变量对于因变量的影响较小。
+
+优点就是简单方便，并且可能会产生相当好的效果，缺点就是从一定程度上修改了数据，可能会破坏数据的信息，尤其是在缺失值过多的情况下。
+
+在此函数中，主要使用以下2个参数：
+
+impute(x, fun = median, ...)
+
+* x：一个向量
+* fun：如果需要填补的列是数值，则使用函数的名称(mean、median等)作为参数值；如果是非数值，则默认填补为出现频次最多的特征值，或者自定义填充值
+
+</font>
+
+```{r}
+
+# install.packages("Hmice")
+library(Hmisc)                                      # impute()
+
+sleep$Sleep <- impute(x = sleep$Sleep, fun = mean)  # 用Sleep列的均值填补Sleep列的缺失值
+sleep$Span  <- impute(x = sleep$Span, fun = median) # 用Span列的均值填补Span列的缺失值
+sleep$NonD  <- impute(x = sleep$NonD, fun = 8)      # 用特定值“8”填补NonD列的缺失值
+
+aggr(sleep, plot = F)                               # 展示此时数据缺失情况
+
+```
+
+<font size=4 face="微软雅黑">
+
+上面返回的结果中可以看出：填补之后的数据集中仅有Dream和Gest两列存在缺失值，之前含有缺失值的3列已被成功填补。
+
+</font>
+
+#### mice
+<font size=4 face="微软雅黑">
+
+mice的全称是Multivariate Imputation by Chained Equations，这个程序包提供了多种高大上的缺失值填补方法，一般用于填补复杂的缺失问题。
+
+其使用两步进行插值：
+
+* 使用**mice()**生成返回数据的m个完整副本，并对每个副本进行相应地建模处理，生成不同的填补值进行填补
+* 使用**complete()**返回这些完整的数据集中的一个(默认)或多个
+
+在此函数中，主要使用以下3个参数：
+
+* data：一个不完整的矩阵或者数据框
+* m：返回的完整数据集的个数
+* method：指定每列数据的估算方法
+
+</font>
+
+<font size=2 face="微软雅黑">
+
+<span style="color:red">注：该函数中包含了很多参数，大家可以在加载mice程序包之后使用`help(mice)`查看帮助文档，获得更详细的信息。</span>
+
+</font>
+
+```{r}
+
+# install.packages("mice")
+library(mice)                                         # mice() / complete()
+data("sleep", package = "VIM")
+
+set.seed(45)                                          # 设置随机种子，保持每次插值的一致性
+sleep.imp <- mice(data = sleep, m = 3, method = "rf") # 基于随机森林模型进行mice插值
+sleep.mice <- complete(sleep.imp)                     # 返回完整数据
+
+anyNA(sleep.mice)                                     # 查看此时的数据是否存在缺失值
+
+```
+
+
+#### knnImputation()
+<font size=4 face="微软雅黑">
+
+上面介绍了几种相对简单粗暴的填补缺失值的方法，下面我们使用高级一点的方法对缺失值进行填补。首先介绍 knn 插值法，此方法是使用 DMwR 程序包中的**knnImputation()**函数。此函数使用knn算法来填补缺失值(如果大家没学过knn算法也无所谓，后面的章节中会讲到)。
+
+具体过程就是利用欧式距离，找出距离含有缺失值的观测最近的k个样本。然后根据这个k个邻居利用设定的方法("weighAvg"或"median")计算出填充值，最后利用此填充值进行填补。
+
+优点就是可以一次性的填补所有的缺失值，并且可以设置邻居的个数，相当于拥有多个填补值；缺点就是计算量比较大，对于大量数据就无能为力了，太消耗时间。
+
+在此函数中，主要使用以下4个参数：
+
+knnImputation(data, k = 10, scale = T, meth = "weighAvg", distData = NULL)
+
+* data：需要填补的数据框
+* k：邻居的数量，默认 k = 10
+* scale：在寻计算距离时是否进行标准化。参数值可以是 TRUE 和 FALSE，默认 scale = TRUE
+* meth：计算填充值的方法。参数值可以是 median 和 weighAvg，默认 meth = "weighAvg"
+
+```{r}
+
+# install.packages("DMwR")
+library(DMwR) # knnImputation()
+data("sleep", package = "VIM")
+
+set.seed(45)
+# 使用knn算法插值
+sleep.knn <- knnImputation(data = sleep, k = 5, scale = TRUE, meth = "weighAvg")
+
+anyNA(sleep.knn)
+
+```
+
+&emsp;&emsp;到此为止，我们把缺失值的填补部分讲完了，然后特征工程(二)中主要涉及离群点、无量纲化和特征重编码部分。
+
+</font>
+
+

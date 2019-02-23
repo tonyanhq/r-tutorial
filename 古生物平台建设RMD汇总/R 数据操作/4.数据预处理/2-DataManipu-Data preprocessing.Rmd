@@ -1,0 +1,150 @@
+---
+title: "数据预处理"
+output: 
+  html_document:
+    number_sections: TRUE
+    toc: TRUE
+    toc_float: TRUE
+    code_folding: show
+    fig_width: 7
+    fig_height: 4.5
+    theme: united
+    highlight: tango
+---
+
+
+<font size=4 face="微软雅黑">
+
+# 数据读取
+***
+&emsp;&emsp;通过R将外部数据导入，读取cardata数据命名为data。
+```{r,}
+data=read.csv("F:/cardata.csv", stringsAsFactors=F)     # 导入数据
+str(data)  # 浏览data的存储类型和结构信息
+```
+<font size=4 face="微软雅黑">
+&emsp;&emsp;查看数据cardata的结构，观察到数据不规整，涉及变量名定义不清晰，数据的元素存在特殊符号，以及带有量纲等。数据质量较差，因此统计分析前需要对数据进行清洗。例如：“卖家报价￥8.50万”需要去掉中文汉字、符号；带有符号“￥”的需要进行去除；单位：“万”的内容需要去掉单位，以及变量类型需要转换。最终通过对数据进行格式化处理，得到可以用来统计分析的数据。
+
+```{r,}
+dim(data) # 查看变量维度
+```
+&emsp;&emsp;通过查看变量维度得cardata数据有7个变量，含有799条数据。
+
+# 数据变量重命名
+***
+&emsp;&emsp;将数据列中信息进行一定的概括，能够更好地对数据变量进行重命名，使得对该列数据可以进行更好的认知、分析。以数据元素中概括的字段信息进行命名，命名时也可根据变量位置进行命名。如下所示：
+ 
+&emsp;&emsp;1）序号位置命名
+```{r,}
+names(data)[1]=("车名")       # 变量重命名
+names(data)[2]=("卖家报价")
+names(data)[3]=("上牌时间")
+names(data)[4]=("车程")
+names(data)[5]=("排放标准")
+names(data)[6]=("排量")
+names(data)[7]=("原价")
+str(data)
+```
+&emsp;&emsp;通过变量的序号位置进行命名，将变量涉及的位置内容进行更改。
+ 
+&emsp;&emsp;2）rename函数命名
+```{r,}
+library(plyr)       # 加载plyr包（用来重命名变量名）
+data=rename(data,c(V1="车名",V2="卖家报价",V3="上牌时间",V4="车程",V5="排放标准",V6="排量",V7="原价"))    # rename函数变量重命名
+names(data)       # 查看rename函数命名后的变量名称
+str(data)
+```
+&emsp;&emsp;通过加载包“plyr”，以rename函数形式对全部变量进行重命名。
+
+# 数据的替换
+ ***
+<font size=4 face="微软雅黑">
+&emsp;&emsp;变量重命名后可以观察一下数据。例如，报价、车程、排量、原价等，结合生活实际一般为数值型，就需要利用R对该变量类型进行修改。
+
+&emsp;&emsp;数据元素信息替换函数是gsub，基本函数规则为：
+
+&emsp;&emsp;**data$ 变量=gsub("变量里包含的文字","",data$变量)**
+
+```{r,}
+data$卖家报价=gsub("卖家报价：￥","",data$卖家报价)# 报价一般为数值型数据，该数据中卖家报价含有单位“万”
+data$卖家报价=gsub("万","",data$卖家报价)
+data$车程=gsub("万公里","",data$车程)
+data$排量=gsub("L 排量","",data$排量)# 排量为数值型数据，单位：L
+data$原价=gsub("厂商新车指导价：","",data$原价) # 原价为数值型数据，单位：万
+data$原价=gsub("万","",data$原价) # 原价为数值型数据，单位：万
+str(data)
+```
+
+&emsp;&emsp;用gsub函数对数据进行处理，替换不符合逻辑的数据。以变量名“排量”进行说明，如下所示：
+
+&emsp;&emsp;**data$ 排量=gsub("L 排量","",data$排量)**
+
+&emsp;&emsp;先提取data数据的“排量”和数据里原来所包含的“L ”，替换为空白，就能得到干净的排量数据。
+
+&emsp;&emsp;替换后，继续观察数据，看看各变量之间的存储类型。
+
+# 数据类型更改
+***
+&emsp;&emsp;什么是存储类型呢？由于不同类型的数据在计算机所需的存储字节不同，因此将R对象类型分为“数值型”、“字符串型”、“逻辑性”等。为了便于统计分析，数据类型的存储结构需要统一。
+
+&emsp;&emsp;观察数据得出变量“车名”是字符串型数据，卖家报价、车程、排量、原价是数值型数据，那么如何改变数据类型呢？如下所示：
+```{r,}
+data$排量=as.numeric(data$排量)    # 将排量改为数值型数据
+data$卖家报价=as.numeric(data$卖家报价)    # 将卖家报价改为数值型数据
+data$车程=as.numeric(data$车程) 
+data$原价=as.numeric(data$原价)
+str(data)         # 浏览对象data的存储类型和结构信息
+```
+&emsp;&emsp;由于排量涉及到数量，定义为数值型数据；卖家报价是指的单价，和数值有关，将卖家报价改为数值型数据。车程、原价等改为数值型数据。
+
+# 数据缺失值删除
+***
+&emsp;&emsp;1）complete.cases函数删除
+
+&emsp;&emsp;通过str()得到数据的结构信息，数据共有799条，且含有缺失值数据，那么如何删除缺失值数据呢？
+
+&emsp;&emsp;为逐个判断每个观测样本是否有取缺失值的变量（域），需要用complete.cases函数，
+
+&emsp;&emsp;基本函数规则为：**complete.cases(矩阵名或数据框名)**
+
+```{r,}
+data=data[complete.cases(data),]     ##删除含有缺失值的数据
+str(data)
+```
+  
+&emsp;&emsp;由以上数据得知，数据量现有792条，共删除了7条缺失值数据
+ 
+&emsp;&emsp;2）na.omit函数删除
+
+&emsp;&emsp;na.omit函数的处理方式是采纳完整观测样本，剔除不完整观测。
+
+&emsp;&emsp;基本函数规则为：**na.omit(矩阵名或数据框名)**
+```{r,}
+data=na.omit(data)                  ##删除所有含有缺失值的数据
+str(data)
+```
+
+# 数据导出
+***
+
+&emsp;&emsp;经过数据清洗后，加工好的数据就可进行保存下来，那么如何将清洗的数据保存下来呢？以数据保存为csv和txt文件为例，说明如下：
+
+&emsp;&emsp;1）保存为txt文件
+
+&emsp;&emsp;数据保存为文本格式需要用的函数为write.table，基本函数规则为：
+
+&emsp;&emsp;**write.table(数据对象名,"要保存的盘:/保存到盘里的文件名称/文件名.txt") **
+```{r,}
+write.table(data,"D:/Task/2R语言基础/导出data.txt") 
+```
+&emsp;&emsp;在设置的指定工作路径下，就能查询到导出的数据。
+
+&emsp;&emsp;2）保存为csv格式
+
+&emsp;&emsp;数据保存为csv格式需用的函数是write.csv函数，基本函数规则为：
+
+
+&emsp;&emsp;**write.csv(数据对象名,"要保存的盘:/保存到盘里的文件名称/文件名.csv")**
+```{r,}
+write.csv(data,"D:/Task/2R语言基础/导出data.csv")
+```

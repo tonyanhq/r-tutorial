@@ -1,0 +1,178 @@
+---
+title: "傅里叶分析"
+output: 
+  html_document:
+    number_sections: TRUE
+    toc: TRUE
+    toc_float: TRUE
+    code_folding: show
+    fig_width: 7
+    fig_height: 5
+    theme: united
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;傅里叶是一位对热传递很感兴趣的法国数学家，他曾经想在科学学会上发表一篇关于用正弦曲线来描述温度分布的论文，他认为任何连续周期信号可以由一组适当的正弦曲线组合而成。当时审查论文的人中，有两位是历史上著名的数学家拉格朗日和拉普拉斯，拉格朗日坚持认为傅里叶的方法无法表示带有棱角的信号，而科学学会屈于拉格朗日的威望，拒绝了傅里叶的工作。直到傅里叶死后15年当年的论文才被发表出来。
+
+&emsp;&emsp;而现在，傅里叶分析在数学、物理学、统计学、信号处理、声学、光学、海洋学等领域有广泛应用。今天，我们就来看一看傅里叶分析，傅里叶分析具体包括傅里叶级数和傅里叶变换。
+
+#傅里叶级数
+<font size=4 face="微软雅黑">
+
+***
+
+##如何得到傅里叶级数
+
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;在物理学中，我们已经知道最简单的波是正弦波，它是形如$Asin(\omega t+\phi)$的波，其中$A$是振幅，$\omega$是角频率，$\phi$是初相位。其他的波如矩形波、锯齿形波等往往都可以用一系列正弦波的叠加表示出来。也就是说，设$f(t)$是一个周期为$T$的波，在一定条件下可以把它写成$$f(t)=A_0+\sum_{n=1}^{\infty}A_nsin(n\omega t+\phi_n)\\=A_0+\sum_{n=1}^{\infty}a_ncos{n\omega t}+b_nsin{n\omega t}$$上式右端的级数就是由$f(t)$所确定的傅里叶级数。
+
+&emsp;&emsp;怎么样直观地理解$f(t)$呢？首先假设$f(t)$是周期为$T$的函数，如何构造三角函数的和，使之等于$f(t)$？
+
+* 常数项
+
+&emsp;&emsp;根据周期函数的定义，常数函数是周期函数，周期为任意实数，所以$f(t)$里面得有一个常数项。
+
+* 通过$sin(t),cos(t)$进行分解
+
+&emsp;&emsp;$sin(t),cos(t)$都是周期函数，进行合理的加减组合，结果可以是周期函数，且它们的微分积分都很简单。$sin(t)$是奇函数，奇函数和奇函数加减只能得到奇函数；$cos(t)$是偶函数，偶函数和偶函数加减只能得到偶函数。任意函数都可以分解成奇偶函数之和$$f(t)=\frac{f(t)+f(-t)}{2}+\frac{f(t)-f(-t)}{2}$$所以分解中同时需要$sin(t),cos(t)$
+
+* 保证组合出来的周期为$T$
+
+&emsp;&emsp;我们知道$f(t)$是周期为$T$的函数，怎么保证组合出来的函数周期依然为$T$呢？$sin(t)$的周期是$2\pi$，$sin(2t)$的周期也是$2\pi$（最小周期是$\pi$），$sin(nt)，n\in N$的周期都为$2\pi$。
+
+![在这里我们假设黑线就是$f(t)$](C:\Users\Lenovo\RProjectPKU\XiaoJin-TianTian\傅里叶变换\pit1.gif)
+
+&emsp;&emsp;更一般的，$sin(\frac{2\pi n}{T}t),cos(\frac{2\pi n}{T}t),n\in N$这些函数的周期都为$T$，将这些函数进行加减，就保证得到的周期也为$T$。
+
+* 调整振幅
+
+&emsp;&emsp;现在我们有一堆周期为$2\pi$的函数了，给这些函数增加振幅，图像就会变高，减小振幅，就会变矮。那么通过改变振幅和加加减减的操作，它们的组合最后就像下图这样慢慢地逼近目标函数。
+
+![](C:\Users\Lenovo\RProjectPKU\XiaoJin-TianTian\傅里叶变换\pit2.gif)
+
+&emsp;&emsp;按照这样的方式，构造出来的三角函数之和大概就是下面这个样子。$$f(t)=A_0+\sum_{n=1}^{\infty}a_ncos{n\omega t}+b_nsin{n\omega t}$$
+
+##确定傅里叶系数
+
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;那么，现在的问题就是，如何确定级数中的参数$A_0,a_n,b_n$（即傅里叶系数）。
+
+&emsp;&emsp;先来看几个简单的事实，设$c$是任意实数，$[c,c+2\pi]$是长度为$2\pi$的区间，由于三角函数$cos(kx),sin(kx)$是周期为$\pi$的函数，经过简单计算，有$$\begin{cases}\int_c^{c+2\pi}coskxdx=\int_0^{2\pi}coskxdx=0\\\int_c^{c+2\pi}sinkxdx=\int_0^{2\pi}sinkxdx=0\end{cases}$$利用高中学的积化和差的三角公式容易证明$$\begin{cases}\int_c^{c+2\pi}\sin{kx}cos{lx}=0\\\int_c^{c+2\pi}\sin{kx}\sin{lx}dx=0(k\ne l)\\\int_c^{c+2\pi}\cos{kx}\sin{lx}dx=0\end{cases}$$还有$$\begin{cases}\int_c^{c+2\pi}\cos^2{kx}=\int_0^{2\pi}\cos^2{kx}dx=\int_0^{2\pi}\frac{1+\cos{2kx}}{2}dx=\pi\\\int_c^{c+2\pi}\sin^2{kx}dx=\pi\\\int_c^{c+2\pi}1^2dx=2\pi\end{cases}$$
+
+&emsp;&emsp;我们考察三角函数系$[1,cosx,sinx,cos2x,sin2x,...,cosnx,sinnx,...]$其中每一个函数在长为$2\pi$的区间上定义，由上述事实可知，其中任何两个不同的函数乘积沿区间上的积分等于0，而每个函数自身平方的积分非0。我们说这个函数系在这个区间上具有正交性。
+
+&emsp;&emsp;接下来，我们就利用三角函数系的正交性来研究傅里叶系数与$f(x)$的关系，从而确定系数的取值。
+设函数$$式1：f(x)=\frac{a_0}{2}+\sum_{k=1}^{\infty}a_kcoskx+b_ksinkx$$
+
+&emsp;&emsp;将该式沿区间$[0,2\pi]$积分，右边级数可以逐项积分，根据三角函数系的正交性可以得到$$\int_{0}^{2\pi}f(x)dx=\frac{a_0}{2}\cdot2\pi=a_0\pi $$即$$a_0=\frac{1}{\pi}\int_{0}^{2\pi}f(x)dx$$又设$n$是任一正整数，对$f(x)$展开式的两边乘以$cosnx$，沿$[0,2\pi]$积分，可以得到$$\int_0^{2\pi}f(x)cosnxdx\\=\frac{a_0}{2}\int_0^{2\pi}cosnxdx+\sum_{k=1}^\infty(a_k)\int_{0}^{2\pi}\cos{kx}\cos{nx}dx+b_k\int_0^{2\pi}\sin{kx}\cos{nx}dx\\=\int_0^{2\pi}a_n\cos^{nx}dx=a_n\pi$$即$$a_n=\frac{1}{\pi}\int_0^{2\pi}f(x)cosnxdx$$同样可得$$b_n=\frac{1}{\pi}\int_0^{2\pi}f(x)sinnxdx$$
+
+##傅里叶级数的复数形式
+
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;傅里叶级数也可以用复数形式表示，在讨论交流电路、频谱分析等问题时，利用这种形式往往可以简化计算。在这之前，要提到一个数学上的一个著名公式：欧拉公式
+
+$$cos{\theta}=\frac{1}{2}(e^{i\theta}+e^{-i\theta})\\sin{\theta}=\frac{1}{2i}(e^{i\theta}-e^{-i\theta})=-\frac{i}{2}(e^{i\theta}-e^{-i\theta})$$把这两个式子套入式1中，可以得到$$\frac{a_0}{2}+\sum_{n=1}^{\infty}(a_ncos{n\omega t+b_nsin{n\omega t}})\\=\frac{a_0}{2}+\sum_{n=1}^{\infty}(\frac{a_n-ib_n}{2}e^{in\omega t}+\frac{a_n+ib_n}{2}e^{-in\omega t})$$如果记$a_0=c_0,a_n-ib_n=c_n,a_n+ib_n=c_{-n}$那么上边的傅里叶级数就可以化成一个简洁的形式$$\frac{1}{2}\sum_{n=-\infty}^{\infty}c_ne^{in\omega t}$$其中，$c_n=\frac{2}{T}\int_{-\frac{T}{2}}^{\frac{T}{2}}f(t)dt$
+
+&emsp;&emsp;到现在，我们就基本了解了傅里叶级数，而傅里叶级数其实就在我们身边。雨过天晴，有时候会看到彩虹，雨后空气中的水分就像是无数的三棱镜，光通过这些水分，发生了散射，形成七色彩虹（实际上是无数种颜色的光波），这个过程就是白色光波被分解成了无数颜色的光波，这些光波就可以用正弦波来近似，这大概就是我们在自然界中最容易观察到的傅里叶级数。
+
+#傅里叶变换
+
+***
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;在讲傅里叶级数的时候，我们说一个具有周期性的波，在一定条件下可以把它写成傅里叶级数的形式，如果我们把这个波的周期推广到$\infty$上，也就是非周期的波，对于非周期波的表示就是傅里叶变换。
+
+&emsp;&emsp;数学表述为：称$\int_{\infty}^{\infty}f(x)e^{-i\omega x}dx$是$f(x)$的傅里叶变换，并把它记为$F(f)$或$\hat f(\omega)$。即$$F(f)=\hat f(\omega)=\int_{\infty}^{\infty}f(x)e^{-i\omega x}dx$$
+&emsp;&emsp;为了直观上区分傅里叶级数和傅里叶变换，我们不得不提到两个概念，叫做时域和频域。
+
+##时域和频域
+
+<font size=4 face="微软雅黑">
+&emsp;&emsp;时域是描述数学函数或物理信号对时间的关系。例如一个信号的时域波形可以表达信号随着时间的变化，它告诉我们信号强度随时间的变化规律。我们直观上看到一个波的样子，就是它在时域中的样子。
+
+&emsp;&emsp;频域是描述信号在频率方面特性时用到的一种坐标系。比如一个波可以由很多波经过组合得到，那么组合它的这些波每个波的频率值就构成了频域，频域揭示了信号是由哪些单一频率的信号合成的。
+
+&emsp;&emsp;我们来看看矩形波在时域中的图像和它在频域中的图像。第一幅图是矩形波经过傅里叶级数生成的频域图，第二幅图是周期增长时，经过傅里叶级数生成的频域图，可以看到频域图越来越密集，第三幅图是当周期趋于$\infty$时，我们就得到了傅里叶变换，频域图变成了连续的曲线。
+
+![](C:\Users\Lenovo\RProjectPKU\XiaoJin-TianTian\傅里叶变换\pit3.jpg)
+&emsp;&emsp;由此可见，傅里叶分析是沟通时域和频域的桥梁。有些问题在时域中很难办到，比如给一个曲线，让你把其中$sin(5x)$的成分去掉，但是这在频域却是十分简单的事情，画出频谱图，找到$sin(5x)$所对应的频率，在频域将其去掉（频域处理），再作一个逆傅里叶变换，就可得到结果。所以很多时域看似不可能的数学操作，在频域相反很容易，这就是需要傅里叶变换的地方。尤其是从某条曲线中去除一些特定频率成分，这在工程上称为滤波，是信号处理最重要的概念之一，只有在频域才可以很轻松地做到。
+
+##逆傅里叶变换
+
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;刚才我们提到逆傅里叶变换，什么是逆傅里叶变换呢，其实非常简单，就是把傅里叶变换做一个逆变换，$f(x)=\frac{1}{2\pi}\int_{-\infty}^{\infty}\hat f(\omega)e^{i\omega x}d{\omega}$如果把傅里叶变换看作我们对系统的指令，那逆傅里叶变换后，就可以看到系统给我们的反馈。
+
+&emsp;&emsp;举一个简单而直观的例子，你去了美国，不知道白宫怎么走，你问翻译：白宫怎么走？翻译跑到街上问美国人:"Where is the White House?"这叫**傅里叶变换**（中文表述到英文表述）；美国路人说："Go straight and turn right"，这叫**频域处理**；翻译听完后给你说：“直走右拐就到了”，这叫**逆傅里叶变换**（系统的反馈）。
+
+&emsp;&emsp;根据原信号的不同类型，傅里叶变换可以分为四种类别
+
+* 周期性连续信号 傅里叶级数(Fourier Series)
+
+* 周期性离散信号 离散傅里叶变换(Discrete Fourier Transform)
+
+* 非周期性连续信号 傅里叶变换(Fourier Transform)
+
+* 非周期性离散信号 离散时域傅里叶变换(Discrete Time Fourier Transform)
+
+#R的实现
+
+<font size=4 face="微软雅黑">
+
+***
+&emsp;&emsp;FFT算法是快速傅里叶变换，它是DFT的一种高效算法，在R中，用`fft()`函数实现，先举一个简单的例子来说明函数输出的各项结果的意义。
+
+```{r}
+x<-c(0, 1, 0, 1, 0, 1)
+fft(x)
+```
+
+&emsp;&emsp;这输出结果实际就是(3,0,0,-3,0,0),第一个对应的是常数项的系数$cos(2\pi x\cdot 0)$，第二个是$cos(2\pi x\cdot 1)$的系数，第$n$个是$cos(2\pi x\cdot n)$的系数。因此数组对应的函数可以展开为$3-3cos(6\pi x)$。
+
+&emsp;&emsp;接下来看一个矩形波的例子
+```{r}
+fs=100#采样频率
+T=1/fs#采样时间
+L=100#信号长度
+t=(0:(L-1))*T#时间向量
+y=rep(-1,L)#初始化y的值为L个-1
+y[1:(0.2*L)]=1#令前20个数为1
+y[(0.4*L):(0.6*L)]=1#令第40-60个数为1
+y[(0.8*L):L]=1
+par(mfrow=c(1,2))#实现一页多图的功能，c(1,2)表示本页有一行两列，可在一行放两张图
+plot(t,y,type="l",main ="矩形波")#画出矩形波在时域中的样子
+Y=fft(y)#做快速傅里叶变换
+Y
+plot(abs(Y),type="l",main="频域图")#画出矩形波在频域中的样子
+
+```
+
+&emsp;&emsp;FFT画出的是连续的频域图，可以看出，矩形波是由很多频率不同的波组合而成的。
+
+#参考文献
+<font size=4 face="微软雅黑">
+
+***
+
+[1]陈传璋. 数学分析[M]. 高等教育出版社, 2007.
+
+<font size=4 face="微软雅黑">
+
+[2]https://www.zhihu.com/question/21665935/answer/358423678
+
+<font size=4 face="微软雅黑">
+
+[3]https://mp.weixin.qq.com/s/kWRhRQQEGSNQxCzfGJkGYg
+
+<font size=4 face="微软雅黑">
+
+[4]https://www.zhihu.com/question/19991026/answer/252715189

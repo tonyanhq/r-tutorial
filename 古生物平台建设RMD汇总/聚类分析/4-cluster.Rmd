@@ -1,0 +1,669 @@
+---
+title: "聚类分析"
+output: 
+  html_document:
+    number_sections: TRUE
+    toc: TRUE
+    toc_float: TRUE
+    code_folding: show
+    fig_width: 7
+    fig_height: 4.5
+    theme: united
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+knitr::opts_knit$set(progress = FALSE, verbose = FALSE)
+```
+
+# 概述
+***
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;聚类分析是一种应用广泛的数据挖掘技术。它的基本原理是将相同或相似的对象通过不同方式（例如采用距离定义）划分到同一个组（簇），聚类分析事先不需要具备任何分类信息，可以简单地通过判断数据特征的相似性直接进行数据归类。
+
+&emsp;&emsp;聚类分析方法应用相当广泛，目前已经被应用于各个领域。在生物学方面，已经被广泛应用于考古学、地质勘探调查、土壤分类、天气预报、微生物分类、农作物品种分类等；在企业运营方面，公司可以根据个人属性划分客户；在经济管理、社会经济统计部门，也通过聚类分析法进行定量分类。
+
+&emsp;&emsp;聚类算法种类繁多，这里将选取应用最广泛、实用性最强的5种聚类算法进行介绍，其中包括：  
+**·K-均值聚类（K-Means）**  
+**·K-中心点聚类（K-Medoids）**  
+**·密度聚类（Densit-based Spatial Cluster of Application with Noise, DBSCAN）**  
+**·层次/系谱聚类（Hierarchical Clustering, HC）**  
+**·期望最大化聚类（Expectation Maximization, EM）**  
+
+</font>
+
+## **K-均值聚类**
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;K-均值算法是一种快速聚类方法，效率高，对于异常值或极值较为敏感，稳定性不高，因此比较适用于处理分布集中的大样本数据集。目前，许多算法均围绕着该算法进行扩展和改进。
+
+&emsp;&emsp;K-均值算法基本思想：  首先确定需要划分K类。在数据集中根据一定策略选择K个点作为每一类的初始中心，然后观察剩余的数据，将数据划分到距离这K个点最近的分类中，即将数据划分成K类完成一次划分，**但形成的新分类并不一定是最好的划分**。因此生成的新分类中，**重新计算**每一类的中心点，然后在重新进行划分，直到每次划分的结果保持不变。在实际应用中往往经过很多次迭代仍然达不到每次划分结果保持不变，甚至因为数据的关系，根本就达不到这个终止条件，实际应用中往往采用变通的方法设置一个最大迭代次数，**当达到最大迭代次数时，终止计算**。
+
+</font>
+
+## **K-中心点聚类**
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;K-中心点算法与K-均值算法在原理上十分相近，它是针对于K-均值算法易受极值影响这一缺点的改进算法。在原理上的差异在于，选择各类中心点时不取样本均值点，而在类别内选取到其余样本距离之和最小的样本为中心。
+
+&emsp;&emsp;K-中心点聚类基本思想：  
+首先需要事先确定划分为K类。在数据集中根据一定策略选取K个点作为中心点集，每个中心点对应一个分类，分别计算各样本点到各个中心点的距离，将样本点放入距离中心点最短的那个分类中。接下来计算各分类中，距类内各样本点距离的绝度误差最小的点，作为新的中心点。如果新的中心点集与原中心点集相同，算法终止；如果新的中心点集与原中心点集不完全相同，则继续重复确定中心点，然后重新划分，直到每次划分的结果保持不变。
+
+```
+**K-均值与K-中心点优缺点比较**
+ a) K-中心点算法具有能够处理大型数据集，结果簇相当紧凑，并且簇与簇之间明显分明的优点，这一点和K-均值算法相同。  
+ 
+ b) 该算法也有K-均值同样的缺点，如：必须事先确定类簇数和中心点，簇数和中心点的选择对结果影响很大；一般在获得一个局部最优的解后就停止了；对于除数值型以外的数据不适合；只适用于聚类结果为凸形的数据集等。  
+ 
+ c) 与K-均值相比，K-中心点算法对于噪声不那么敏感，这样对于离群点就不会造成划分的结果偏差过大，少数数据不会造成重大影响。
+
+ d) K-中心点算法由于上述原因被认为是对K-均值算法的改进，但由于按照中心点选择的方式进行计算，算法的时间复杂度也比K-means上升了O(n)。
+```
+</font>
+
+## **层次/系谱聚类**
+<font size=4 face="微软雅黑">
+
+
+&emsp;&emsp;上一部分介绍的K-均值算法是一种方便好用的聚类算法，但是始终有K值选择和初始聚类中心点选择的问题，而这些问题也会影响聚类的效果。为了避免这些问题，我们可以选择另外一种比较实用的聚类算法——层次/系谱聚类算法。顾名思义，层次聚类就是一层一层的进行聚类。层次聚类可以分成凝聚（agglomerative,自底向上）和分裂（divisive，自顶向下）两种方法来构建聚类层次，但不管采用哪种算法，算法都需要距离的相似性度量来判断对数据究竟是采取合并还是分裂处理。一般使用较多的是由下向上的凝聚方法。
+&emsp;&emsp;凝聚层次聚类：这是一个自底向上的聚类方法。算法开始时，每个观测样例都被划分到单独的簇中，算法计算得出每个簇之间的相似度（距离），并将两个相似度最高的簇合成一个簇，然后反复迭代，直到所有的数据都被划分到一个簇中。
+&emsp;&emsp;分裂层次聚类：这是一种自顶向下的聚类算法，算法开始时，每个观测样例都被划分同一个簇中，然后算法开始将簇分裂成两个相异度最大的小簇，并反复迭代，直到每个观测值属于单独一个簇。
+
+
+</font>
+
+## **密度聚类**
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;DBSCAN(Density-Based Spatial Clustering of Application with Noise)是一种典型的基于密度的聚类算法，在DBSCAN算法中将数据点分为一下三类：
+核心点。在半径eps内含有超过MinPts数目的点
+边界点。在半径eps内点的数量小于MinPts，但是落在核心点的邻域内
+噪音点。既不是核心点也不是边界点的点
+&emsp;&emsp;在这里有两个量，一个是半径eps，另一个是指定的数目MinPts。
+
+&emsp;&emsp;一些其他的概念  
+1.	eps邻域。简单来讲就是与点p的距离小于等于eps的所有的点的集合。  
+2.	直接密度可达。如果p在核心对象q的eps邻域内，则称对象p从对象q出发是直接密度可达的。  
+3.  密度可达。对于对象链，任意一个对象是从其前一个对象关于eps和MinPts直接密度可达的，则这一个对象是从第一个对象关于eps和MinPts密度可达的。  
+
+&emsp;&emsp;密度聚类的核心思想就是先发现密度较高的点，然后把相近的高密度点逐步都连成一片，进而生成各种簇。算法实现上就是，对每个数据点为圆心，以eps为半径画个圈（称为邻域eps-neigbourhood），然后数有多少个点在这个圈内，这个数就是该点密度值。然后我们可以选取一个密度阈值MinPts，如圈内点数小于MinPts的圆心点为低密度的点，而大于或等于MinPts的圆心点高密度的点（称为核心点Core point）。如果有一个高密度的点在另一个高密度的点的圈内，我们就把这两个点连接起来，这样我们可以把好多点不断地串联出来。之后，如果有低密度的点也在高密度的点的圈内，把它也连到最近的高密度点上，称之为边界点。这样所有能连到一起的点就成一了个簇，而不在任何高密度点的圈内的低密度点就是异常点。
+
+&emsp;&emsp;下图展示了DBSCAN的工作原理。
+
+</font>
+<div align=center>
+![](E:\PKU_R\DBSCAN.jpg)
+</div>
+ 
+&emsp;&emsp;当设置MinPts=4的时候，红点为高密度点，蓝点为异常点，黄点为边界点。红黄点串成一起成了一个簇。
+
+
+
+&emsp;&emsp;那么我们什么时候需要用DBSCAN来聚类呢？一般来说，如果数据集是稠密的，并且数据集不是凸的，那么用DBSCAN会比K-Means聚类效果好很多。如果数据集不是稠密的，则不推荐用DBSCAN来聚类。
+
+
+　　　　&emsp;&emsp;DBSCAN的主要优点有：
+
+　1） 可以对任意形状的稠密数据集进行聚类，相对的，K-Means之类的聚类算法一般只适用于凸数据集。
+
+　2） 可以在聚类的同时发现异常点，对数据集中的异常点不敏感。
+
+　3） 聚类结果没有偏倚，相对的，K-Means之类的聚类算法初始值对聚类结果有很大影响。
+
+&emsp;&emsp;DBSCAN的主要缺点有：
+
+   1）DBSCAN不能很好反映高维数据。如果样本集的密度不均匀、聚类间距差相差很大时，聚类质量较差，这时用DBSCAN聚类一般不适合。
+ 
+　 2）DBSCAN对于用户定义参数半径eps和密度阈值MinPts十分敏感，参数取值细微的不同可能会导致差别很大的结果，而且参数的选取无规律可循，只能靠不断地尝试或靠经验确定。
+
+
+</font>
+
+## **期望最大化聚类**
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;期望最大化算法（以下简称EM算法）被评为机器学习十大算法之一，它的思路十分巧妙，在使用该方法进行聚类时，它将数据集看作一个含有隐性变量的概率模型，并以实现模型最优化，即获取与数据本身性质最契合的聚类方式为目的，通过“反复估计”模型参数找出最优解，同时给出相应的最优类别数k。“反复估计”的过程即为EM算法的精华所在，这一过程由E-step（Exception）和M-step（Maximization）这两个步骤交替进行来实现。  
+&emsp;&emsp;EM算法即简单，又复杂。简单在于它的思想，它仅包含了两个步骤就能完成强大的功能，复杂在于它的数学推理涉及到比较繁杂的概率公式。大家可以通过阅读https://www.cnblogs.com/zlslch/p/6965374.html 来通俗理解EM算法的推导过程。
+
+
+</font>
+
+# R的实现
+***
+<font size=4 face="微软雅黑">
+
+</font>
+
+## **相关软件包**
+<font size=4 face="微软雅黑">
+本章我们将接触4个软件包——stats、cluster、fpc以及mclust  
+·stats主要包含一些统计函数，例如随机数生成等  
+·cluster专用于聚类分析，含有众多聚类函数与数据集  
+·fpc中含有一些聚类算法函数，如线性回归聚类，DBSCAN聚类等  
+·mclust则主要用来处理基于高斯混合模型，通过EM算法实现的聚类、分类以及密度估计等问题。  
+
+聚类算法中涉及的函数较多，为避免混乱，现将实现各算法时主要使用的函数及相关的软件包整理如下表所示：
+
+聚类算法  | 软件包 | 主要函数  
+----------|--------|----------
+K-均值(K-Means)| stats | kmeans( ) 
+K-中心点(K-Medoids)  | cluster | pam( )
+层次/系谱聚类(HC)  | stats     | hclust( )、cutree( )、rect.hclust( )
+密度聚类(DBSCAN)  | fpc     | dbscan( )
+期望最大化聚类(EM)  | mclust     | Mclust( )、clustBIC( )、densityMclust( )
+
+
+</font>
+
+## **核心函数介绍** {.tabset .tabset-fade .tabset-pills}
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;本节将依次对5种算法的核心函数进行介绍，它们分别是：`kmeans()`、`pam()`、`dbscan()`、`hclust()`、`Mclust()`等。
+
+</font>
+
+### **kmeans()**
+<font size=4 face="微软雅黑">
+
+**kmeans()**函数的功能是实现k-均值算法，来源于stats软件包。
+
+```
+kmeans(x, center, inter.max = 10, nstart = 1, algorithm = c("Hartigan-Wong", "Lloyd", "For-gy", "MacQueen"))
+
+```
+&emsp;&emsp;其中  
+&emsp;&emsp;x为进行聚类分析的数据集；  
+&emsp;&emsp;center为预设的类别数k；  
+&emsp;&emsp;iter.max表示迭代的最大值（R中默认为10次迭代）；  
+&emsp;&emsp;nstart为选择随机起始中心点的次数，默认为1；   
+&emsp;&emsp;参数algorithm提供了4种算法选择，默认为“Hartigan-Wong”算法。
+
+
+</font>
+
+### **pam()**
+<font size=4 face="微软雅黑">
+
+**pam()**函数用来实现K-中心点算法，来源于cluster软件包。
+
+```
+pam(x, k, diss = inherits(x, "dist"), metric = "euclidean",
+    medoids = NULL, stand = FALSE, cluster.only = FALSE,
+    do.swap = TRUE,
+    keep.diss = !diss && !cluster.only && n < 100,
+    keep.data = !diss && !cluster.only,
+    pamonce = FALSE, trace.lev = 0)
+
+```
+<span style="color:red">注：pam()中的参数x与kmeans()中不完全相同，x也可为相异度矩阵。以下仅将x表述为数据集。</span>
+
+&emsp;&emsp;其中，  
+&emsp;&emsp;x与k分别表示待处理数据集与类别数；  
+&emsp;&emsp;metric参数用于样本点之间距离的测算方式，可选择的有“euclidean”和“manhattan”；  
+&emsp;&emsp;medoids默认取NULL，即由软件选择初始中心点样本，也可以认为设定一个k维向量来指定初始点；  
+&emsp;&emsp;stand用于选择对数据进行聚类前是否需要进行标准化；  
+&emsp;&emsp;cluster.only用于选择是否仅获取各样本所属的类别（Cluster vector）这一项聚类结果，若选择TRUE，则聚类过程效率更高；  
+&emsp;&emsp;keep.data选择是否在聚类结果中保留数据集。
+
+</font>
+
+### **dbscan()**
+<font size=4 face="微软雅黑">
+
+**dbscan()**函数用于实现DBSCAN聚类算法
+
+```
+dbscan(data, eps, MinPts = 5, scale = FALSE, 
+      method = c("hybrid", "raw", "dist"), seeds = TRUE, 
+      showplot = FALSE, countmode = NULL)
+```
+&emsp;&emsp;其中，  
+&emsp;&emsp;data为待聚类数据集或距离矩阵；  
+&emsp;&emsp;eps为考察每一样本点是否满足密度要求时，所划定考察邻域的半径；  
+&emsp;&emsp;MinPts为密度阈值，当考察点eps邻域内的样本点数大于等于MinPts时，该点才被认为是核心对象，否则为边缘点；  
+&emsp;&emsp;scale用于选择是否在聚类前先对数据集进行标准化；    
+&emsp;&emsp;method参数用于选择如何看待data，具体的，“hybrid”表示data为距离矩阵，“raw“表示data为原始数据集，且不计算其距离矩阵，“dist”也将data视为原始数据集，但计算局部聚类矩阵；  
+&emsp;&emsp;showplot用于选择是否输出聚类结果示意图，取值为0表示不绘图，取值为1表示每次迭代都绘图，取值为2表示仅对子迭代过程绘图。  
+
+</font>
+
+### **hclust()等**
+<font size=4 face="微软雅黑">
+
+**hclust()**函数、**cutree()**函数和**rect.hclust()**函数在层次聚类过程中发挥不同作用。
+
+介绍**hclust()**函数之前,首先介绍**dist()**距离函数。在执行层次聚类操作之前，我们需要确定两个簇之间的相似度到底有多大，通常我们会使用一些距离计算公式：
+
+最短距离法(single linkage），计算每个簇之间的最短距离： 
+dist(c1,c2) = min dist(a,b) 
+
+最长距离法(complete linkage）,计算每个簇中两点之间的最长距离： 
+dist(c1,c2) = max dist(a,b) 
+
+平均距离法（average linkage）,计算每个簇中两点之间的平均距离： 
+
+最小方差法（ward）,计算簇中每个点到合并后的簇中心的距离差的平方和。 
+
+
+距离矩阵计算函数 `dist()`   
+<span style="color:red">注：dij中ij表示样品，而不是第ij个变量。</span>
+```
+dist(x, method = "euclidean", diag = FALSE, upper = FALSE, p = 2)
+
+
+其中：
+  x: 为数据矩阵 n*p
+  method: 为计算方法，包括"euclidean" 欧式距离  
+                          "maximum" 切比雪夫距离  
+                          "manhattan" 绝对值距离  
+                          "canberra" 兰式距离  
+                          "minkowski" 明式距离  
+                          "binary" 定性变量的距离  
+  diag: 是否包含对角线元素
+  upper: 是否需要上三角 
+  p: 为 Minkowski 距离的幂次
+```
+
+&emsp;&emsp;层次聚类的核心函数为**hclust()**，用来实现层次聚类算法，其基本格式含有三个参数：
+```
+hclust(d, method = "complete", members = NULL)
+```
+&emsp;&emsp;其中，  
+&emsp;&emsp;d为待处理数据集样本间的距离矩阵，可用dist()函数计算得到；    
+&emsp;&emsp;method参数用于选择聚类的具体算法，可用选择的有single、ward及complete等7种，默认选择complete方法；  
+&emsp;&emsp;参数members用于支出每个带聚类样本点是由几个单样本构成，如共有5个待聚类样本点，当我们设置members = rep(2, 5)，则表示每个样本点中分别是有2个单样本聚类的结果，该参数默认值为NULL，表示每个样本点本身即为单样本。
+
+&emsp;&emsp;而**cutree()**函数可以对**hclust()**函数的聚类结果进行剪枝，即可以选择输出指定类别数的层次聚类结果，其格式为：
+```
+cutree(tree, k = NULL, h = NULL)
+```
+&emsp;&emsp;其中，tree为hclust()函数聚类的结果，参数k和h用来控制选择输出的结果
+
+&emsp;&emsp;函数**rect.hclust()**可以在plot()函数形成的聚类图中将指定类别中的样本分支用方框表示出来，十分有助于直观分析聚类结果。其基本格式为：
+```
+rect,hclust(tree, k = NULL, which = NULL, x = NULL, h = NULL, border = 2, cluster = NULL)
+```
+&emsp;&emsp;其中，tree为hclust()的聚类结果。
+</font>
+
+### **Mclust()等**
+<font size=4 face="微软雅黑">
+
+**Mclust()**函数、**mclustBIC()**函数及**densityMclust()**函数是进行EM聚类的函数，全部来自于mclust软件包。
+
+&emsp;&emsp;**Mclust()**函数为EM聚类的核心函数，其基本格式为：
+```
+Mclust(data, G = NULL, modelNames = NULL, prior = NULL, control = emControl(), initialization = NULL, warn = FALSE, ...)
+```
+&emsp;&emsp;其中，data用于放置待处理的数据集；G为预设类别数，默认值为1至9，由R软件根据BIC的值在1至9中选择最优值；modelNames用于设定模型类别，该参数和G一样也可以由函数自动选取最优值。
+
+&emsp;&emsp;**mclustBIC()**函数的参数设置与Mclust基本一致，用于获取数据集所对应的参数化高斯混合模型的BIC值，而BIC值的作用即使评价模型的优劣，BIC值越高模型越优。
+
+&emsp;&emsp;**densityMclust()**函数利用Mclust的聚类结果对数据集中的每个样本点进行密度估计。
+
+</font>
+
+## **数据集**
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;为了运用平面图清晰地展示聚类效果，我们选用一个多维数据集——鸢尾花(Iris)来进行算法演示，该数据集是一个150行5列的二维表，为R基础包自带数据，含有150个样本，对应数据集的每行数据。每行数据包含每个样本的四个特征和样本的类别信息。每个样本包含了花萼长度、花萼宽度、花瓣长度、花瓣宽度四个特征（前4列），第五列为品种信息。这里，我们把Species列去掉，将150个样本进行聚类分析。
+
+&emsp;&emsp;以下我们对数据进行简单探索和预处理。
+
+```{r}
+data(iris)               # 获取数据集iris
+summary(iris)            # 获取iris数据集的概况信息
+clu_data <- iris[, -ncol(iris)]  # 读取数据集，并命名为clu_data
+dim(clu_data)            # 获取数据维度
+head(clu_data)           # 显示数据集clu_data的前6条数据
+```
+
+&emsp;&emsp;以下我们以图形方式展示数据,下图显示的为花萼长度与宽度的散点图。
+
+```{r}
+plot(clu_data$Sepal.Length, clu_data$Sepal.Width)   # 花萼长度与宽度的散点图
+```
+&emsp;&emsp;需要说明的是，随着数据维度及样本量的增大，仅通过数据探索步骤很难获得如我们在上图看到的二维数据中的信息，此时通过软件进行聚类分析的作用和意义将更为显著。例如将四个变量同时展示在一张图上，同时得到若干散点图，如下图所示。
+```{r}
+plot(clu_data) # 绘制全部变量散点图
+```
+
+
+<span style="color:red">注：当数据集中各个变量的量纲差别较大时，需要在聚类分析前对数据进行标准化。</span>
+
+# 应用案例
+***
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;下面我们开始运用R软件，通过5种聚类方法分别对鸢尾花Iris数据集展开聚类分析。
+
+</font>
+
+## **K-均值聚类**
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;首先我们尝试将样本点聚类为较少类别（取center = 3），其他参数取默认值来对Iris进行分类。
+
+```{r}
+set.seed(1)                                  # 用于设定随机数种子
+fit_km1 <- kmeans(clu_data, centers = 3)     # 用kmeans算法对Iris数据集进行聚类
+fit_km1                                      # 输出聚类结果
+```
+
+&emsp;&emsp;如上结果中显示了3个类别所含样本数（sizes），分别为62,50和38。各个类别中心点坐标（Cluster means）如上述结果所示，即第一类可以被认为是花瓣宽度较小，第二类为花萼长度较小且花瓣长度宽度较小，第三类为花萼长度较大且花瓣宽度较大。
+
+&emsp;&emsp;另外，我们可以从聚类向量（Clustering vector）一栏中看到每一个样本对应的分类情况。例如第一个样本被划分为第三类中。  
+
+&emsp;&emsp;在这之后，结果输出显示了各个分类的组内平方和，第二类组内平方和最大，第三类组内平方和最小，即第二类样本的差异性最大，第三类样本的差异性最小，且组内平方和占总平方和的79.0%，该值可以用于与类别数取不同值时的聚类结果进行比较，从而找出最优聚类结果。该百分数的数值越大表明组内差距越小、组间差距越大，即聚类效果越好。  
+
+&emsp;&emsp;最后，根据获得的结果（Available components）部分来分别获取聚类的各项输出结果，例如：
+```{r}
+fit_km1$centers          # 获取各类别中心点坐标
+```
+
+&emsp;&emsp;我们依次输出总平方和(totss)、组内平方和的总和(tot.withinss)，以及组间平方和(betweenss)，并进行简单运算，得到下面等式：  
+&emsp;&emsp; **组间平方和 + 组内平方和 = 总平方和**  
+```{r}
+fit_km1$totss           # 输出本次聚类的总平方和(totss)
+fit_km1$tot.withinss    # 输出本次聚类的组内平方和的总和(tot.withinss)
+fit_km1$betweenss       # 输出本次聚类的组间平方和(betweenss)
+
+fit_km1$betweenss + fit_km1$tot.withinss       # 计算组间及组内平方和的总和
+```
+&emsp;&emsp;由此，我们看到组间平方和约为组内平方和的4倍，即组间差距远大于组内差距，这正是聚类的意义所在——将相似点聚为一类，相异点划分为不同类。  
+
+
+&emsp;&emsp;下面我们以更加直观的方式展示聚类结果。
+```{r}
+plot(clu_data, pch = (fit_km1$cluster - 1), col = fit_km1$cluster)    # 数据集中聚为3类的样本点以3种不同形状及颜色表示
+```
+
+&emsp;&emsp;从上图中我们能够直观看到每一种分类之间的不同。下面，调用barplot函数绘制每个分类中心的条形图及同种属性不同分类的条形图。  
+```{r}
+barplot(t(fit_km1$centers), beside = TRUE, xlab = "分类情况", ylab = "数值")    # 绘制每个分类中心的条形图
+
+barplot(fit_km1$centers, beside = TRUE, xlab = "分类情况", ylab = "数值")       # 绘制每个属性不同分类的条形图
+```
+
+&emsp;&emsp;由上图可见，花萼最长的为第二分类，最宽的为第三分类，花瓣最长和最宽的均为第二分类。  
+&emsp;&emsp;下面，我们来调节类别数参数center的取值，并通过前面所讨论的组间平方和占总平方和的百分比值（下面简称为“聚类优度”），来比较选择出最优类别数。具体的，由于共有150个样本，我们将类别数从1至149取遍，实现该想法的程序代码如下:
+
+```{r}
+result <- rep(0,149)             # 设置result变量用于存储149个聚类优度值
+for(k in 1:149) {               # 对类别数k进行循环
+  fit_km <- kmeans(clu_data, center = k)          # 每次选取不同的类别数k，进行K-均值聚类
+  result[k] <- fit_km$betweenss/fit_km$totss      # 将每次计算得到的聚类优度k存储在result中
+}
+round(result,2)                  # 将得到的聚类优度取两位小数输出
+```
+&emsp;&emsp;由以上输出结果，我们可以大概看出，在类别数约小于10时，随着类别数的增加聚类效果越来越好（result值从0.78快速提高至0.96左右）；但当类别数超过10以后再增加时，聚类效果基本不再提高（result值在0.96至1.00之间浮动）。
+
+&emsp;&emsp;这与我们所预估的结果一致，当类别数基本接近样本点个数，即接近于每一分类中只含有一个样本的情况，聚类效果很显著，但是没有实际意义。
+
+&emsp;&emsp;下面我们对result进行制图来直观比较各类别数下的聚类优度，代码如下所示。
+```{r}
+plot(c(1:149), result, type = "l", main = "聚类优度变化", xlab = "聚类个数", ylab = "聚类优度")   # 对result制图
+points(10, result[10], pch = 16)    # 将类别数为10的点用实心圆标出
+legend(10, result[10], sprintf("%.f%%", result[10]*100), bty = "n", xjust = 0.4, cex = 0.8)    # 标出聚类优度
+```
+
+&emsp;&emsp;事实上，最优类别数没有确切的答案，划分为9类、11类或12类并无太大差别，因此，此处我们不妨取k=10为最优类别数。在实际选择过程中，如果并非要求有极高的聚类效果，取k=5或6即可，较小的类别数在后续的数据分析与描述过程中更加有效。
+
+&emsp;&emsp;下面我们来看划分为10类的聚类结果，并绘制聚类效果图。
+
+```{r}
+fit_km2 <- kmeans(clu_data, center = 10)      # 取参数为10，进行K-均值聚类
+plot(clu_data, pch = (fit_km2$cluster - 1), col = fit_km2$cluster)     # 绘制划分为10类的散点图
+```
+
+&emsp;&emsp;我们看到，分类数目过多带来的影响是图形不易辨别，且描述上会更加复杂。
+
+</font>
+
+## **K-中心点聚类**
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;同使用K-均值算法时一样，我们首先选择类别数为3的情况来熟悉pam()函数的使用方式。
+
+```{r}
+library(cluster)      # 加载cluster软件包
+fit_pam <- pam(clu_data, 3)   # 用K-中心点方法对数据集进行聚类
+fit_pam
+```
+
+&emsp;&emsp;从输出结果的Medoids中我们看到，相对于kmeans函数，pam函数的输出结果多出了中心点ID这一项，该项指出了聚类结果所对应的中心点分别是哪几个中心点，它的变量取值是多少。本例中，第一类的中心点为8号样本，第二类的中心点为79号样本，第三类的中心点为113号样本，这三个样本可以作为所在类别的代表样本，这一信息无法从K-均值算法中得到。  
+
+&emsp;&emsp;目标方程项（Objective function）给出了build和swap过程中目标方程的值。其中，build过程用于在没有指定初始中心点情况下，对于最优初始中心点的寻找，swap过程则用于在初始中心点的基础上，对目标方程寻找其能达到局部最优类别划分状态。
+
+&emsp;&emsp;除此之外，pam()函数还可以提供一些数据处理过程中的输出结果，我们可以通过引用"$"符号来回看聚类结果相应的数据集，还可以通过call标签来查看聚类参数。
+```{r}
+head(fit_pam$data)     # 回看产生该聚类结果的数据集
+
+fit_pam$call           # 回看pam函数的参数设定
+```
+
+
+
+</font>
+
+## **层次/系谱聚类**
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;下面介绍的是层次/系谱聚类。首先需要计算样本点之间的距离构造距离矩阵，这里我们使用dist()函数中默认的欧氏距离，然后在使用hcluster()函数展开层次聚类，得到聚类树形图。
+
+&emsp;&emsp;为了作图更加直观，我们将样本进行分层抽样。这里我们按照每种“Species”抽取3/5个样本进行抽样，使用的是srswor方法。
+
+```{r}
+library(sampling)                                      # 加载分层抽样sampling软件包
+n <- round(3/5*nrow(iris)/3)                           # 计算每一个种类的抽样数目
+sub_train <- strata(iris, stratanames=("Species"), size=rep(n,3), method="srswor") # stratanames参数是抽样依据的变量，size参数是每个种类抽样的数目，n为抽样数目，method是srswor抽样方法
+head(sub_train)                                        # 显示前6个抽样结果
+samp_hc <- clu_data[sub_train$ID_unit,]                # 将层次聚类使用的样本定义为samp_hc
+head(samp_hc)                                          # 显示前6个待分类样本
+```
+
+```{r}
+fit_hc <- hclust(dist(samp_hc), method = "single")    # 对数据集进行层次聚类，选择最短距离法
+fit_hc                                                 # 显示聚类相关信息
+plot(fit_hc, hang = -1, cex = .5)                      # 绘制聚类结果树形图，hang等于数值，表示标签与末端树杈的距离
+```
+
+&emsp;&emsp;根据上面的树形图我们可以看到，图的最下面每一个样本代表一个分类，随着聚类的进行，样本逐渐被划分为不同的类别，最终聚合成为1类。图像纵坐标表示为树形图的高度（Height）。
+
+&emsp;&emsp;下面我们将通过层次聚类将数据集划分为3类。
+
+```{r}
+hc_k3 <- cutree(fit_hc, k = 3)    # 将树形图划分为3类
+hc_k3                             # 显示分类结果
+table(hc_k3)                      # 显示每一组的样本个数
+hc_h3 <- cutree(fit_hc, h = 3)    # 将树形图以h=3划分聚类
+hc_h3                             # 显示分类结果
+table(hc_h3)                      # 显示每一组的样本个数
+```
+
+&emsp;&emsp;上述过程中，通过cutree()函数分别指定了分类个数k以及分类高度h来确定聚类个数。我们还可以通过rect.hclus()函数来查看不同聚类数目的聚类结果。
+
+```{r}
+plot(fit_hc, hang = -1, cex = .5)                               # 得到层次聚类树形图
+rect.hclust(fit_hc, k = 4, border = "orange")                   # 划分为4类并用橘黄色矩形框标注
+rect.hclust(fit_hc, k = 3, border = "dark blue")                # 划分为3类并用深蓝色矩形框标注
+rect.hclust(fit_hc, k = 7, which = c(2,5), border = "green")    # 划分为7类并用绿色矩形框标注出第2类和第5类
+```
+
+&emsp;&emsp;上述方法中我们采用的是凝聚层次聚类，如果想要使用分裂层次聚类则需要使用diana()函数来完成。
+
+```{r}
+dv <- diana(samp_hc, metric = "euclidean")           # 使用分裂层次聚类，距离采用欧氏距离
+summary(dv)                                           # 输出模型结果
+plot(dv, which.plot=2, hang = -1, cex = .5)           # 得到带banner的聚类数树图
+```
+
+
+</font>
+
+## **密度聚类**
+<font size=4 face="微软雅黑">
+
+&emsp;&emsp;我们首先使用dbscan()函数的两个参数eps和MinPts随意取值，通过查看输出结果，再考虑如何根据数据集的特征确定更加合适的参数。
+
+```{r}
+library(fpc)                                        # 加载fpc软件包
+ds1 <- dbscan(clu_data, eps = 1.0, MinPts = 3)        # 取半径参数eps为1.0，密度阈值MinPits为3
+ds2 <- dbscan(clu_data, eps = 0.5, MinPts = 3)        # 取半径参数eps为0.5，密度阈值MinPits为3
+ds3 <- dbscan(clu_data, eps = 0.5, MinPts = 5)        # 取半径参数eps为0.5，密度阈值MinPits为5
+ds4 <- dbscan(clu_data, eps = 1.0, MinPts = 5)        # 取半径参数eps为1.0，密度阈值MinPits为5
+```
+
+```{r}
+ds1   # 输出第1种参数取值情况下的聚类结果
+```
+&emsp;&emsp;根据结果，在MinPts=3，eps=1时，样本被分为2类，其中第1类含有50个样本，即以上输出结果中标号为1所对应的列，seed所对应的行也就是我们在概述中所说的相互密度可达的核心对象所构成的类别，即为类别A；第2类含有100个样本，即以上输出结果中标号为2所对应的列，seed所对应的行也就是我们在概述中所说的相互密度可达的核心对象所构成的类别，即为类别B。 
+
+&emsp;&emsp;我们可以看出，在半径设为1.0，阈值设为3时，DBSCAN算法将全部样本点完整划分为2类，聚类结果如下图：
+```{r}
+plot(ds1, clu_data, main = "1: MinPts = 3, eps = 1.0")   # 绘制MinPts=5，eps=1.0聚类结果
+```
+
+```{r}
+ds2   # 输出第2种参数取值情况下的聚类结果
+```
+&emsp;&emsp;由以上分析结果，我们尝试减小半径，阈值不做改变，仍设为3，可以想象，如此一来会有一些样本被划分为不同的分类。在MinPts=3，eps=0.5时，从输出结果中，可以看到有，样本被分为4类，其中第1类总共含有49个样本，其中seed对应的47为相互密度可达的核心对象所构成的类别（详见前面概述部分概念），另外的2个样本点，即border所对应行中的数字2，也就是与第一类seed中密度相连的边缘点。以此类推，第2类含有84个样本，其中seed点78个，border点6个；第3类含有4个样本，其中seed点4个，没有border点；第4类含有3个样本，其中seed点1个，border点2个；标号0所对应的列为噪声点的个数，此处为10。
+&emsp;&emsp;我们可以看出，在半径设为0.5，阈值设为3时，DBSCAN算法的结果发生变化，图中的噪声点用黑色小圆圈表示。聚类结果如下图：
+```{r}
+plot(ds2, clu_data, main = "2: MinPts = 3, eps = 0.5")   # 绘制MinPts=3，eps=0.5聚类结果
+```
+
+
+```{r}
+ds3   # 输出第3种参数取值情况下的聚类结果
+```
+&emsp;&emsp;这一次，我们尝试不改变半径，而将阈值从3增大到5。从输出结果中，我们看到样本被划分为2类。噪声点个数变为17个。
+&emsp;&emsp;第三种聚类结果如下图：
+```{r}
+plot(ds3, clu_data, main = "3: MinPts = 5, eps = 0.5")   # 绘制MinPts=5，eps=0.5聚类结果
+```
+
+```{r}
+ds4   # 输出第4种参数取值情况下的聚类结果
+```
+&emsp;&emsp;最后，我们保持阈值不变为5，但是把半径翻倍为8，由于核心对象、密度可达等概念的判定条件在很大程度上被放松，所以我们可以预判，会有大量的样本点被归为同一类中。由输出结果，在总共的150个样本中，50个被聚类为第1类，100个被聚类为第2类，其中有1个样本点与第二类的seed构成border点。第四次分类中没有噪声点。
+&emsp;&emsp;我们可以看出，在半径设为1.0，阈值设为5时，聚类结果如下图：
+```{r}
+plot(ds4, clu_data, main = "4: MinPts = 5, eps = 1.0")   # 绘制MinPts=5，eps=1.0聚类结果
+```
+
+&emsp;&emsp;根据以上过程，我们可以看出DBSCAN算法参数取值的规律：半径参数与阈值参数的取值差距越大，所得类别总数越小；具体的。半径参数相对于阈值参数较小时，越多的样本被判定为噪声点或边缘点。
+
+&emsp;&emsp;掌握参数取值规律之后，我们可以根据研究需要来设置半径与阈值这两个核心参数，从而获得理想的聚类结果。但在设置参数之前，我们有必要从数据集本身性质出发，事先获知参数的合适取值范围，否则将会无从下手。
+
+&emsp;&emsp;因此，我们考虑查看大多数样本间的距离是在怎样的一个范围，再以此距离作为半径参数的取值，这样则可以很大程度上保证大部分样本被聚于类别内，而不被认为是噪声点。
+```{r}
+d <- dist(clu_data)   # 计算数据集的距离矩阵d
+max(d); min(d)        # 查看样本间距离的最大值与最小值
+```
+&emsp;&emsp;对各样本之间的距离进行分段处理，结合最大值和最小值相差7左右，取分段数为7，找到样本点最集中的分区。
+
+```{r}
+library(ggplot2)         # 为使用数据分段函数cut_interval(),加载ggplot2软件包
+interval <- cut_interval(d, 35)   # 将距离分为35段
+table(interval)                   # 展示数据分段结果
+which.max(table(interval))        # 找出所含样本点最多的区间
+```
+&emsp;&emsp;根据结果，我们发现样本点的距离大多集中在0.607至0.81之间，因此我们考虑半径参数为0.7与0.8、密度阈值为1至7，作双重循环结果如下：
+
+```{r}
+for(i in c(0.7, 0.8))         # 半径参数取0.7与0.8
+{  for(j in 1:7)              # 密度阈值取1至7
+  {
+    ds  <- dbscan(clu_data, eps = i, MinPts = j)    # 在半径为i，阈值为j时，作DBSCAN距离
+    print(ds)                                       # 输出每一次的聚类结果
+  }}
+```
+
+由于共有14个DBSCAN聚类结果，所以将各参数下的聚类结果汇总于下表中：
+
+![](E:\PKU_R\DBSCAN_res.jpg)
+
+&emsp;&emsp;下面，我们根据如上汇总结果来选取合适的参数值。一般来说，类别数应该至少高于2类，否则进行聚类的意义不大；而且噪声点不应太多，若太多则说明参数条件不合适，参与有效聚类的样本点少。
+
+&emsp;&emsp;针对本数据集的情况，我们选出类别数多于2，且噪声点为1或0的各组参数，详见表中阴影部分。
+
+
+
+</font>
+
+## **期望最大化聚类**
+<font size=4 face="微软雅黑">
+
+```{r}
+library(mclust)               # 加载mclust包
+fit_EM <- Mclust(clu_data)    # 对数据集进行EM聚类
+summary(fit_EM)               # 获取EM聚类结果的信息汇总
+```
+
+&emsp;&emsp;根据以上结果，我们看到，根据BIC选择出的最佳模型类型为VEV，最优类别数为2，且各类分别含有50个和100个样本。弱项获得包括参数估计值在内的更多具体信息可以运行如下代码：
+
+```{r}
+summary(fit_EM, parameters = TRUE)   # 获取EM聚类结果的细节信息
+```
+
+&emsp;&emsp;当对Mclust的聚类结果直接作图，可以得到4张连续图形，分别为BIC图、分类图（Classification）、概率图（Classification Uncertainty）以及密度图（log Density Contour Plot）。
+
+```{r}
+plot(fit_EM)
+```
+
+&emsp;&emsp;为了进一步对数据集进行分析，比如尝试使用其他模型或类别数k来进行聚类，我们可以选择反复改变Mclust的相应参数来观察结果，也可以使用mclustBIC()函数来实现比较。
+```{r}
+clu_BIC <- mclustBIC(clu_data)   # 获取数据集在各模型和类别数下的BIC值
+clu_BICsum <- summary(clu_BIC, data = clu_data)   # 获取数据集的BIC概况
+clu_BICsum
+```
+
+&emsp;&emsp;如上我们得到BIC值最高时的模型情况以及BIC取值，分别为2分类的VEV模型、3分类的VEV模型以及2分类的VVV模型。具体的也可以通过输出BIC矩阵或以图形的方式显示全部的结果。
+
+```{r}
+clu_BIC    # 输出BIC矩阵
+plot(clu_BIC, G = 1:7)   # 对数据集在类别数为1至7的条件下的BIC值作图
+```
+
+&emsp;&emsp;下面我们利用densityMclust()函数对各样本进行密度估计后，我们可以绘制出2维和3维密度图，分别如下图所示。
+```{r}
+clu_Dens <- densityMclust(clu_data)  # 对每一个样本进行密度估计
+plot(clu_Dens, clu_data)  # 作2维密度图
+plot(clu_Dens, type = "persp") # 作3维密度图
+```
+
+# 本章汇总
+***
+
+名称 | 类别 | 功能
+---- | ---- | ------
+cluster  | 软件包 | 提供函数pam()  
+iris | 数据集  | r语言中用于数据挖掘的数据包  
+cut_interval() | 函数 | 对数据进行分段处理  
+sampling | 软件包 | 用于分层抽样
+strata() | 函数 | 用于分层抽样
+cutree() | 函数 | 用于树的剪枝  
+dbscan() | 函数 | DBSCAN聚类算法核心函数  
+densityMclust() | 函数 | 利用Mclust()的聚类结果对样本进行密度估计  
+dist() | 函数 | 计算样本间距离  
+fpc() | 函数 | 提供dbscan()函数  
+ggplot2 | 函数 | 提供cut_intervak()函数  
+hclust() | 函数 | 层次聚类核心函数  
+kmeans() | 函数 | K-均值聚类核心函数  
+legend() | 函数 | 在图形中添加图例  
+mclust | 软件包 | 提供函数Mclust()、mclustBIC()、densityMclust()
+Mclust() | 函数 | EM算法聚类核心函数
+mclustBIC() | 函数 | 获取参数化高斯混合模型的BIC值
+pam() | 函数 | K-中心聚类核心函数
+rect.hclust() | 函数 | 对层次聚类图添加矩形框
+stats | 软件包 | 提供函数kmeans()、hclust()、cutree()以及rect.hclust()
+table() | 函数 | 将对象形成表格
+which.max() | 函数 | 输出取值最大对象的下标值
+
+# 参考文献
+***
+[1] 周志华. 机器学习 : = Machine learning[M]. 清华大学出版社, 2016.  
+[2] 黄文, 王正林. 数据挖掘 : R语言实战[M]. 电子工业出版社, 2014.  

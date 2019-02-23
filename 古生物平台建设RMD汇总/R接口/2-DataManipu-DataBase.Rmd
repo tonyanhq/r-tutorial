@@ -1,0 +1,59 @@
+---
+title: "R与Oracle数据库连接"
+output: 
+  html_document:
+    number_sections: TRUE
+    toc: TRUE
+    toc_float: TRUE
+    code_folding: show
+    fig_width: 7
+    fig_height: 4.5
+    theme: united
+    highlight: tango
+---
+
+# R与Oracle数据库的连接
+***
+&emsp;&emsp;1）电脑的配置准备
+
+&emsp;&emsp;在windows窗口下，对数据库的ODBC连接进行配置，选择和自己电脑系统位数相同的进行匹配，如下所示：
+
+![ ](D:\TASK\ODBC界面进入设置.png)
+
+&emsp;&emsp;2）电脑的ODBC用户名和数据库进行匹配
+
+&emsp;&emsp;第一步：添加或配置数据库的ODBC；第二步：对ODBC的信息进行填写。
+
+&emsp;&emsp;操作如下图所示：
+
+![ ](D:\TASK\同雪数据库进行ODBC的配置.png)
+
+
+# R连接数据库
+***
+&emsp;&emsp;对Oracle数据库的用户名进行输入，连接Oracle数据库，以SQL调取数据库的数据。
+
+```{r}
+library("RODBC")
+data=odbcConnect("oracle",uid="Tongxue",pwd="tongxue",believeNRows=F) #用户名，密码进行连接
+D1=sqlQuery(data," select * from 训练集数据") #读取数据库中的训练集数据
+head(D1) #查看训练集数据中的前6行。
+```
+
+&emsp;&emsp;对Oracle数据库进行调取，查看数据库的清单数据，其中目标变量值是违约情况，涉及1违约，0不违约；客户渠道是指办理某些业务的渠道，教育是指的其教育水平。
+```{r}
+D2=sqlQuery(data,"select 目标变量值,nvl(客户渠道,'其它渠道'),nvl(教育,'其它'),婚姻,是否有公积金,count(*) from 训练集数据 group by 目标变量值,客户渠道,教育,婚姻,是否有公积金")#对数据库中的训练集数据进行分组调取
+head(D2) #查看分组调取后的数据
+```
+
+&emsp;&emsp;通过对客户渠道和目标变量值进行分组查看，可以看出在目标变量值下的不同客户数占比情况。
+
+```{r}
+D3=sqlQuery(data,"select 目标变量值,nvl(客户渠道,'其它渠道'),count(*) 客户数 from 训练集数据  group by 目标变量值,客户渠道 order by count(*) desc ")#对数据库中的训练集数据进行分组调取
+head(D3)#查看分组调取后的数据
+```
+
+&emsp;&emsp;通过SQL，可以得出数据中的客户渠道、客户数二者间的占比，能够看出客户渠道的客户数排名占比情况，得出除了其他渠道和APP外，涉及最多的渠道是wechat。
+
+
+
